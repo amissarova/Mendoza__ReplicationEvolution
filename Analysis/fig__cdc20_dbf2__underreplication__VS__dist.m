@@ -4,7 +4,8 @@ addpath(genpath('~/Google Drive/'));
 cd ~/Develop/Mendoza__ReplicationEvolution/Data/
 load('DS_Michi.mat');
 
-%%
+%% generate a figure, for each chromosome/arm - a fraction of unreplicated (y axis) VS distance to the end (x axis)
+% green line - pMet3cdc20; red line - dbf2-2
 chr_nums = [1:16];
 % dist to the end of the chromosome, KB
 K = 75;
@@ -82,6 +83,22 @@ end
 
 set(gcf , 'PaperPosition' , [0 0 15 30]);
 %print('-dpsc2' , 'cdc20_dbf2__underreplication__VS__dist.eps');
+
+%% colors for the legend (once mutant names are settled):
+
+% cdc20 - summer(12 , 3);
+% dbf2 - hot(12 , 3);
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -6,8 +6,8 @@ load([DATASAVEDIR 'DEE.mat'] );
 % confirm that auxotrophic markers are frequently 'lost'
 %
 
-Y = DEE.fraction_experiments_zero_reads * 100+0.1 ;
-X = DEE.expr_l2 ;
+X = DEE.expr_l2_nonzero ;   %  expression when reads is not zero
+Y = DEE.fraction_experiments_zero_reads * 100+0.1 ;   % vs fraction of experiments w/zero reads
 
 [xData, yData] = prepareCurveData( X , Y );
 % Set up fittype and options.
@@ -18,6 +18,10 @@ opts.Robust = 'LAR';
 
 % Fit model to data.
 [fitresult, gof] = fit( xData, yData, ft, opts );
+
+Ypred = feval(fitresult ,X );
+DEE.Los_minus_Losspred   =  Y - Ypred ;  
+
 figure; hold on ;
 plot(X,Y,'.k','DisplayName','all genes')
 ylabel('% experiments w/zero read counts')
@@ -44,13 +48,19 @@ xl = linspace(min(X),8,1e4);
 plot( xl , feval(fitresult,xl) , '-r','DisplayName','fit')
 ylim([0.1 60])
 xlim([0.01 12])
-%% loss corrected for expression
+
+% display residuals -- should be high for auxotrophic markers
+DEE(ismember(DEE.GENE_T,genes) ,{'GENE_T','Los_minus_Losspred'});
+
+%% save a minimal .mat file for joining w/other datasets
+DEE = DEE(  : , {'ORF' 'GENE_T' 'fraction_experiments_zero_reads' 'expr_l2'   'Los_minus_Losspred'  'Chr' 'Start' 'End' 'dist_to_end' }) ; 
+save( [DATASAVEDIR '/DEE_minimal.mat' ]  , 'DEE'); 
+%% boxplot loss corrected for expression
 idx = DEE.dist_to_end < 50*1000  ;
 G = round( DEE.dist_to_end(idx) ./ 5000).*5000 ;
 ug = unique(G) ;
 figure;  hold on;
-Ypred = feval(fitresult ,X );
-bh = boxplot( Y(idx) - Ypred(idx) , G  ,'notch','on','plotstyle','compact','Symbol',''...
+bh = boxplot( DEE.Los_minus_Losspred(idx) , G  ,'notch','on','plotstyle','compact','Symbol',''...
     ,'Positions',1:numel(ug) , 'Labels',ug/1000 ,'LabelOrientation','horizontal')
 ylabel('gene loss residual (by expr)')
 xlabel('distance from chr end (kb)')
@@ -61,7 +71,6 @@ for I = 1:numel(bh)
 end
 
 %% loss not corrected for expression
-%%
 idx = DEE.expr_l2 > log2(10) % 10 reads ;
 G = round( DEE.dist_to_end ./ 5000).*5000 ;
 ug = unique(G(idx)) ;
@@ -95,9 +104,10 @@ for I = 1:(numel(ug)-1)
 end
 
 %%
+THRESHOLD_PRCTILE_EXPRESSION_TO_CONSIDER = 0 ; 
 DEE.ChrRightArm = regexpcmp(DEE.ORF,'Y.R') ; 
 DEE = sortrows(DEE , { 'Chr' 'ChrRightArm' 'dist_to_end'} ,'descend');
-idx_genes_to_check = find(DEE.expr_l2 >= prctile(DEE.expr_l2,25)) ; 
+idx_genes_to_check = find(DEE.expr_l2 >= prctile(DEE.expr_l2, THRESHOLD_PRCTILE_EXPRESSION_TO_CONSIDER )) ; 
 exprmat = table2array( DEE( : , regexpcmp(DEE.Properties.VariableNames , '^.RR\d')));
 
 c = NaN(height(DEE),2);
@@ -113,7 +123,7 @@ for I = 1:height(DEE)
     end
 end
 
-%%
+
 G = round( DEE.dist_to_end ./ 5000) .* 5 ;
 idx = c(:,4) < 50000 ;
 
@@ -142,19 +152,27 @@ xlim([0 10])
 ylabel('% time rest of arm is deleted')
 xlabel('Kb from chr end')
 
-%%
+%  scatter plots intead of boxplots
 idx = c(:,4) < 50000  ; 
 fh = figure('units','centimeters','position',[5 5 7 7 ]);
-gscatter( DEE.dist_to_end(idx)./1000 ,  100*(c(idx,1) ./ ncols(exprmat)) , c(idx,2) );
-plot( DEE.dist_to_end(idx)./1000 ,  100*(c(idx,1) ./ ncols(exprmat)) ,'ok','MarkerFaceColor',[.7 .7 .7]);
-plot( DEE.dist_to_end(idx)./1000 ,  100*(c(idx,1) ./ c(idx,3)) ,'ok','MarkerFaceColor',[.7 .7 .7]);
-
-xlabel('kb from end')
-xlabel('kb to the chromosome end')
+subplot(2,1,1)
+plot( DEE.dist_to_end(idx)./1000 ,  100*(c(idx,1) ./ ncols(exprmat)) ,'ok','MarkerFaceColor',[.7 .7 .7]); %absolute
+ylabel('absolute')
 set(gca,'xscale','log')
 set(gca,'xtick',[.5 1 2 5 10 25 50])
-ylabel({'% of strains with the' 'entire arm deleted'})
+xlim([.1 50])
+set(gca,'ytick',0:10:100)
+
+
+subplot(2,1,2)
+plot( DEE.dist_to_end(idx)./1000 ,  100*(c(idx,1) ./ c(idx,3)) ,'ok','MarkerFaceColor',[.7 .7 .7]);  %conditional 
+ylabel('conditional')
+set(gca,'xscale','log')
+xlabel('kb to the chromosome end')
+set(gca,'xtick',[.5 1 2 5 10 25 50])
+set(gca,'ytick',0:20:100)
+%ylabel({'% of strains with the' 'entire arm deleted'})
 legend('off')   
 axis tight;
-xlim([2 50])
+xlim([.1 50])
 

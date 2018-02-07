@@ -16,6 +16,7 @@ DEPTH = dlmread( [ DATADIR 'depth200.tab' ] )' ; %note the transpose
 LOCS = readtable([ DATADIR 'regions200.tab' ],'FileType','text','ReadVariableNames',false);
 
 LOCS.Properties.VariableNames = {'chr' 'start' 'stop'};
+LOCS.Chromosome = str2double( regexprep(  regexprep( LOCS.chr , 'ref.NC_','')  ,'\|','') ) - 1132 ; 
 EXPS = EXPS.Var1' ; 
 
 % remove non-gDNA locations
@@ -48,25 +49,40 @@ EXPS_passed_thresh = EXPS(idx) ;
 normalized_depth = normalized_depth( : , idx ) ;
 DEPTH = DEPTH( : , idx ) ; 
 
+normalized_depth_vect = normalized_depth(:);
+
 figure; imagesc( normalized_depth , [0 prctile(normalized_depth(:),95)] )
 
+normalized_depth_nan = normalized_depth;
+normalized_depth_nan( normalized_depth_nan == 0) = NaN ; 
+idx_sufficient_coverage_when_present = nanmedian(normalized_depth_nan , 2) > 1e-5 ; 
+%% many positions have low coverage across all reads (GC content?)
+%   these are comming up as false positives
+% only interested in regions that, when not zero, have decent coverage
+%
+
 %% for a few thresholds, which regions tend to have < THRESH reads
-for THRESH = [ 0 1 2 5 10]
+LOCS.SuffCov = idx_sufficient_coverage_when_present ; 
+for THRESH = [ 0 1 2  ]
     LOCS.(['n_times_region_lost_' num2str(THRESH)]) =  sum( DEPTH <= THRESH , 2) ;
 end
+N = size(DEPTH,2) ; 
 
+%%
+LOCS.KB = round(LOCS.start ./ 1000) ;
+G = grpstats( LOCS , {'chr' 'Chromosome' 'KB' },'sum' ,'DataVars' , {'n_times_region_lost_0' 'SuffCov'});
 %%
 uchrs = unique(LOCS.chr);
 for I = 1:17
     figure; hold on ;
     idx =  strcmp(LOCS.chr,uchrs{I}) ; 
-    plot( LOCS.start(idx) , LOCS.n_times_region_lost_0(idx) ,'.');
-    plot( LOCS.start(idx) , LOCS.n_times_region_lost_1(idx) ,'.');
-    plot( LOCS.start(idx) , LOCS.n_times_region_lost_2(idx) ,'.');
-  %  plot( LOCS.start(idx) , LOCS.n_times_region_lost_5(idx) ,'.');
-  %  plot( LOCS.start(idx) , LOCS.n_times_region_lost_10(idx) ,'.');
+    idx2 = idx & LOCS.SuffCov ; 
+    plot( LOCS.start(idx2) , 100*(LOCS.n_times_region_lost_0(idx2) ./ N) ,'.' ,'DisplayName','reads <= 0');
+    xlim([-10 max(LOCS.stop(idx2))])
   title( uchrs{I} )
-
+  xlabel(sprintf( 'position along chr %d' , I) )
+  ylabel('% of strains lost')
+ legend('location','best')
 end
 %% build 'chr truncated till x' table
 THRESH = prctile(normalized_depth(:),1) ; %threshold for considering # reads == 0 

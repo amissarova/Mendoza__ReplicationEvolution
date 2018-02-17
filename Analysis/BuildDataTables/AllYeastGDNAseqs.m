@@ -7,6 +7,8 @@
 %% load coverage data for all experiments
 % download & uncompress depth.tgz as generated from the 'depth' target in 
 %    /homes/users/lcarey/single_cell_behavior/Projects/2017__Mendoza_ReplicationTiming/AllYeastGDNAseqs
+% eg: 
+%   scp marvin.s.upf.edu:Projects/2017__Mendoza_ReplicationTiming/AllYeastGDNAseqs/depth.tgz ./ ; tar -czvf depth.tgz
 
 DATADIR = '~/Desktop/AllYeastGDNAseqs/' ; 
 EXPS = readtable([ DATADIR 'exps.tab' ] ,'FileType','text','ReadVariableNames',false);

@@ -77,8 +77,8 @@ cdc20 = readtable('cdc20_features.bed','FileType','text','TreatAsEmpty',{'.'});
 
 % optionally, truncate dataset at Xkb from ends
 uchr = unique(cdc20.Var1);
-TRUNCATE = 0 * 1000 ; 
-cdc20 = cdc20( cdc20.Var3 > TRUNCATE ,:);
+TRUNCATE = 75 * 1000 ; 
+cdc20 = cdc20( cdc20.Var3 < TRUNCATE ,:);
 for I = 1:numel(uchr)
     maxpos = GENOME.nt( strcmp(GENOME.chrom , uchr{I}));
     idx1 = ~strcmp(cdc20.Var1 , uchr{I}) ; 
@@ -106,7 +106,7 @@ R = R( ismember( R.TYPE , {'telomere' 'transposable_element_gene' 'ARS' 'tRNA_ge
 R.TYPE = regexprep( R.TYPE , '_gene' ,'');
 R.TYPE{ strcmp(R.TYPE,'transposable_element')} = 'transposon' ; 
 
-%%
+%
 NOT_SIG_CLR = [.8 .8 .8] ; 
 PVAL_THRESH = 0.01 ; 
 data = NaN( height(R) , max(R.N));

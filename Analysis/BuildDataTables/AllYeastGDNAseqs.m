@@ -29,7 +29,7 @@ LOCS = LOCS( regexpcmp( LOCS.chr , '^chr[IVX]') ,:);
 %   arbitrary filters, but the results seem rather insensitive to reasonable values
 
 % filter to get experiments w/reasonable coverage
-THRESH_MEAN_VS_MEDIAN = 1.505 ; % 1.05 very stringent , 1.5 loose
+THRESH_MEAN_VS_MEDIAN = 1.05 ; % 1.05 very stringent , 1.5 loose
 %THRESH_MEAN_VS_MEDIAN = 10.5 ; % 1.05 very stringent , 1.5 loose
 
 THRESH_MAX_BINS_ZERO = numel(LOCS.chr)/10 ; % discard experiment if 10% is zero

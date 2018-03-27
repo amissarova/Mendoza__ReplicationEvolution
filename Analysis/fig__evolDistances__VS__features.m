@@ -2,7 +2,7 @@
 
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__200bp.mat');
 
-idx = find(~isnan(DS.percent_unreplicated_not_trimmed_cdc20) & ~isnan(DS.percent_unreplicated_not_trimmed_dbf2));
+idx = find(~isnan(DS.percent_unreplicated_not_trimmed_cdc20) & ~isnan(DS.percent_unreplicated_not_trimmed_dbf2) );
 T = DS(idx , :);
 rand_vec = rand(length(T) , 1);
 T.random_num = NaN(length(T) , 1);
@@ -21,6 +21,67 @@ for I = 1:K-1
     idx{I} = temp_idx;
 end 
 idx{K} = all_idx;
+
+%% Freq SNPs: dist, Trep, dist+Trep; underrep
+DS.dist_log = log2(DS.dist_to_the_end_kb);
+T.dist_log = log2(T.dist_to_the_end_kb);
+%%
+parameters_idx = cell(4,1);
+parameters_idx{1} = [42]; parameters_idx{2} = [13]; parameters_idx{3} = [42 13]; parameters_idx{4} = [25]; 
+R_train = cell(length(parameters_idx),1);
+R_test = cell(length(parameters_idx),1);
+for I = 1:length(parameters_idx)
+    X = double( T(:,parameters_idx{I}));
+    Y = double( T(:, 21)) ;
+    temp_train = NaN(K,1);
+    temp_test = NaN(K,1);
+    for J = 1:K
+        %aa = [I J]
+        idx_train = setdiff([1:length(T)] , idx{J});
+        idx_test = idx{J};
+        Mdl = fitglm(X(idx_train , :) , Y(idx_train , :) );
+        Y_train = predict(Mdl , X(idx_train , :));
+        Y_test = predict(Mdl , X(idx_test , :));
+        
+        mean_y = nanmean(Y(idx_train ));
+        SS_tot = sum((Y(idx_train) - mean_y).^2);
+        SS_res = sum((Y(idx_train) - Y_train).^2);
+        temp_train(J) = 1 - (SS_res/SS_tot);
+        
+        mean_y = nanmean(Y(idx_test));
+        SS_tot = sum((Y(idx_test) - mean_y).^2);
+        SS_res = sum((Y(idx_test) - Y_test).^2);
+        temp_test(J) = 1 - (SS_res/SS_tot);
+    end
+    R_train{I} = temp_train;
+    R_test{I} = temp_test;
+end
+
+figure; hold on; grid on; set(gca , 'FontSize' , 20); 
+data = [R_test{1} R_test{2} R_test{3} R_test{4} ];
+boxplot(data , 'notch' , 'on' , 'color' , [.2 .2 .2], 'symbol','');
+
+clrs = parula(16);
+%clrs_set = [clrs2(2,:); clrs2(10,:); clrs1(3,:) ; clrs4(2,:); clrs3(4,:); clrs5(3,:); clrs2(6,:); clrs1(3,:)];
+%labels = {'dist' , 'dist+Trep' , 'dist+chr', 'dist+chr+Trep' , 'dist+ARS' , 'dist+expression+Trep+chr' , 'all'};
+for I = 1:length(parameters_idx)
+    scatter(repmat(I,K,1)+rand(K,1)*0.2-0.1 , R_test{I} , 100 , clrs(4*I-2,:) , 'filled' , 'd' , 'MarkerEdgeColor' , [.2 .2 .2]);
+%     [~ , p] = ttest2(R_test{I} , R_train{I});
+%     if p < 0.05
+%         scatter(3*I-1.5 , 1 , 100 , 'k'  , 'x');
+%     end
+end
+xticklabels = {'1.distance to telomer, log' , '2.Replication Timing' , '3. 1+2' , '4.% unreplicated in M' };
+%set(gca , 'Xtick' , [1:8] , 'XtickLabel' , xticklabels);
+
+ylabel('R^{2}');
+%xtickangle(-45);
+set(gcf , 'PaperPosition' , [0 0 20 20]);
+title('% of strains, where gene is preserved'); 
+print('-dpsc2' , 'frac_conservation__R2.eps');
+
+
+
 
 
 %% Freq SNPs
@@ -152,6 +213,7 @@ for I = 1:K-1
     idx{I} = temp_idx;
 end 
 idx{K} = all_idx;
+
 %% Preservation frac
 parameters_idx = cell(6,1);
 parameters_idx{1} = [23]; parameters_idx{2} = [16]; parameters_idx{3} = [14]; parameters_idx{4} = [14 16 23]; 
@@ -204,12 +266,12 @@ print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Manuscript/Fig1
 
 %% legend for 11A-C
 figure; hold on; grid on; set(gca , 'FontSize' , 20);
-clrs = parula(24);
+clrs = parula(16);
 for I = 1:length(parameters_idx)
     scatter(repmat(I,K,1)+rand(K,1)*0.2-0.1 , R_test{I} , 70 , clrs(4*I-2,:) , 'filled' , 'd');
 end
-legend('1. Distance to ARS' , '2. Replication timing' , '3. Distance to the end' , '4. 1+2+3' , ...
-    '5. Degree of underreplication in late anaphase' , '6. Degree of underreplication in metaphase' , 'location' , 'best');
+legend('1. Distance to telomeric end, log' , '2. Replication timing' , '3. Distance to telomeric end, log + Replication timing'  , ...
+    '4. Degree of underreplication in metaphase' ,'location' , 'best');
 
 
 

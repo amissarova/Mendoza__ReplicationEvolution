@@ -1,0 +1,87 @@
+%%
+cd('~/Develop/Mendoza__ReplicationEvolution/Figures/Lucas__EvolConf');
+addpath(genpath('~/Develop/matlab'));
+%% for SNP/InDel frequency 
+load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__200bp.mat');
+DS.dist_log = log2(DS.dist_to_the_end_kb);
+DS = DS(: , {'dist_log' , 'Trep_spline' , 'percent_unreplicated_not_trimmed_cdc20_smooth' , 'freq_SNP' , 'freq_indel'});
+idx = find(~isnan(DS.percent_unreplicated_not_trimmed_cdc20_smooth));
+T = DS(idx , :);
+rand_vec = rand(length(T) , 1);
+T.random_num = NaN(length(T) , 1);
+for I = 1:length(T)
+    T.random_num(I) = rand_vec(I);
+end
+T = sortrows(T , 'random_num');
+
+K = 25;
+N = round(length(T)/K);
+all_idx = [1:length(T)];
+idx = cell(K , 1);
+for I = 1:K-1
+    temp_idx = all_idx(1:N);
+    all_idx = setdiff(all_idx , temp_idx);
+    idx{I} = temp_idx;
+end 
+idx{K} = all_idx;
+
+idx_output = [4 5];
+title_names = {'SNP frequency' , 'InDel frequency'};
+save_names = {'SNP__R2' , 'Indel__R2'};
+parameters_idx = cell(4,1);
+parameters_idx{1} = [1]; parameters_idx{2} = [2]; parameters_idx{3} = [1 2]; parameters_idx{4} = [3]; 
+for Z = 1:2
+    R_train = cell(length(parameters_idx),1);
+    R_test = cell(length(parameters_idx),1);
+    for I = 1:length(parameters_idx)
+        X = double( T(:,parameters_idx{I}));
+        Y = double( T(:, idx_output(Z))) ;
+        temp_train = NaN(K,1);
+        temp_test = NaN(K,1);
+        for J = 1:K
+            
+            idx_train = setdiff([1:length(T)] , idx{J});
+            idx_test = idx{J};
+            Mdl = fitglm(X(idx_train , :) , Y(idx_train , :) );
+            Y_train = predict(Mdl , X(idx_train , :));
+            Y_test = predict(Mdl , X(idx_test , :));
+
+            mean_y = nanmean(Y(idx_train ));
+            SS_tot = sum((Y(idx_train) - mean_y).^2);
+            SS_res = sum((Y(idx_train) - Y_train).^2);
+            temp_train(J) = 1 - (SS_res/SS_tot);
+
+            mean_y = nanmean(Y(idx_test));
+            SS_tot = sum((Y(idx_test) - mean_y).^2);
+            SS_res = sum((Y(idx_test) - Y_test).^2);
+            temp_test(J) = 1 - (SS_res/SS_tot);
+        end
+        R_train{I} = temp_train;
+        R_test{I} = temp_test;
+    end
+
+    figure; hold on; grid on; set(gca , 'FontSize' , 8); 
+    data = [R_test{1} R_test{2} R_test{3} R_test{4} ];
+    mean_data = mean(data);
+    std_data = std(data);
+	clrs = parula(16);
+    for I = 1:4
+        bar(I , mean_data(I) , 'FaceColor' , clrs(4*I-2,:));
+        errorbar(I , mean_data(I) , std_data(I) , 'LineWidth' , 2, 'color' , [.2 .2 .2]);
+    end
+    [~,p] = ttest2(data(:,3) , data(:,4));
+    if p < 0.0001
+        text(3 , nanmax(nanmax(data)) , 'p < 0.0001' , 'FontSize' , 6);
+    else
+        text(3 , nanmax(nanmax(data)) , sprintf('p = %.3f' , p) , 'FontSize' , 6);
+    end
+    ylabel('R^{2}');
+    set(gcf , 'PaperPosition' , [0 0 4 4]);
+    title(title_names{Z}); 
+    xlim([.5 4.5]);
+    set(gca , 'Xtick' , [1:4]);
+    print('-dpng' , save_names{Z});
+end
+
+
+

@@ -372,14 +372,6 @@ for I = 6:8
     print('-dpng' , save_name);
 end
 
-    
-    
-    
-    
-    
-    
-    
-
 
 
 %% get which ORFs are on top/bottom by both metrics
@@ -404,196 +396,97 @@ D = DS(: , {'ORF'});
 export(D , 'file' , 'descend_degreeUnderreplication_DM.txt');
 
 %%
-idx = find(~isnan(DS.log2_mRNA_Nagalakshimi));
-D = DS(idx , :);
-D.bin_expression = NaN(length(D) , 1);
-for I = 1:length(D)
-    if D.log2_mRNA_Nagalakshimi(I) <= 2
-        D.bin_expression(I) = 0;
-    elseif D.log2_mRNA_Nagalakshimi(I) <= 4
-        D.bin_expression(I) = 1;
-	elseif D.log2_mRNA_Nagalakshimi(I) <= 6
-        D.bin_expression(I) = 2;
-	elseif D.log2_mRNA_Nagalakshimi(I) <= 8
-        D.bin_expression(I) = 3; 
-	elseif D.log2_mRNA_Nagalakshimi(I) <= 10
-        D.bin_expression(I) = 4;    
+data_mRNA = DS.max_mRNA;
+data_PROseq = DS.max_PROseq;
+figure; 
+subplot(2,1,1); hold on; grid on; 
+hist(data_mRNA , [nanmin(data_mRNA) : 1 : nanmax(data_mRNA)]);
+xlim([0 10]);
+
+subplot(2,1,2); hold on; grid on; 
+hist(data_PROseq , [nanmin(data_PROseq) : 0.5 : nanmax(data_PROseq)]);
+xlim([0 5]);
+
+
+
+%%
+DS.mRNA_bin = NaN(length(DS) , 1);
+DS.PROseq_bin = NaN(length(DS) , 1);
+for I = 1:length(DS)
+    if DS.median_mRNA(I) <= quantile(DS.median_mRNA , .05)
+        DS.mRNA_bin(I) = 1;
+    elseif DS.median_mRNA(I) <= quantile(DS.median_mRNA , .95)
+        DS.mRNA_bin(I) = 2;
     else
-        D.bin_expression(I) = 5;
+        DS.mRNA_bin(I) = 3;
+    end
+    
+    if DS.median_PROseq(I) <= quantile(DS.median_PROseq , .05)
+        DS.PROseq_bin(I) = 1;
+    elseif DS.median_PROseq(I) <= quantile(DS.median_PROseq , .95)
+        DS.PROseq_bin(I) = 2;
+    else
+        DS.PROseq_bin(I) = 3;
     end
 end
 %%
-unq_bin = unique(D.bin_expression);
+idx_orf = find(strcmp(DS.TYPE , 'ORF')); 
 figure; 
-
+clrs1 = pink(56);
+clrs2 = summer(56);
 subplot(2,2,1); hold on; grid on; set(gca , 'FontSize' , 12);
-clrs = parula(4*length(unq_bin));
-for I = 1:length(unq_bin)
-    idx = find(D.bin_expression == unq_bin(I));
-    scatter(repmat(I , length(idx) , 1)+randn(length(idx) , 1)*0.03-0.015 , D.percent_unreplicated_not_trimmed_cdc20_smooth(idx) , 30 , clrs(4*I-2,:) , 'filled' )
-    boxplot(D.percent_unreplicated_not_trimmed_cdc20_smooth , D.bin_expression , ...
-        'color' , [.2 .2 .2] , 'symbol' , '');
-    data = DS.percent_unreplicated_not_trimmed_cdc20_smooth(strcmp(DS.TYPE , 'ORF'));
-    [~,p] = ttest2(data , D.percent_unreplicated_not_trimmed_cdc20_smooth(idx));
-    if p < .005
-        scatter(I-0.1 , 25 , 30,[.2 .2 .2] , '*' , 'LineWidth' , 3);
-        scatter(I+0.1 , 25 , 30,[.2 .2 .2] , '*' , 'LineWidth' , 3);
-    elseif p < .05
-        scatter(I , 25 , 30,[.2 .2 .2] , '*' , 'LineWidth' , 3);
-    end
+for I = 1:3
+    idx = find(DS.mRNA_bin == I & strcmp(DS.TYPE , 'ORF'));
+    data = DS.percent_unreplicated_not_trimmed_cdc20_smooth(idx); data = data(~isnan(data));
+    scatter(repmat(I , 1 , length(data))+rand(1 , length(data))*0.3-0.15 , data , 20 , clrs1(6*I+4,:) , ...
+        'filled');
 end
-xlabel('Expression');
-ylabel('Degree underrep, meta');
-ylim([-20 30]);
+h = boxplot(DS.percent_unreplicated_not_trimmed_cdc20_smooth(idx_orf) , DS.mRNA_bin(idx_orf) , 'color' , [.2 .2 .2] , 'symbol' , '');
+set(h , 'LineWidth' , 1.9);
+set(gca , 'Xtick' , [1:3] , 'XtickLabel' , {'<= 5% Q' , '5-95%' , '> 95% Q'});
+xlabel('mRNAseq'); ylabel('% unreplicated');
+ylim([-15 35]);
 
 subplot(2,2,2); hold on; grid on; set(gca , 'FontSize' , 12);
-clrs = parula(4*length(unq_bin));
-for I = 1:length(unq_bin)
-    idx = find(D.bin_expression == unq_bin(I));
-    scatter(repmat(I , length(idx) , 1)+randn(length(idx) , 1)*0.03-0.015 , D.percent_unreplicated_not_trimmed_cdc20_smooth(idx) , 30 , clrs(4*I-2,:) , 'filled' )
-    boxplot(D.percent_unreplicated_not_trimmed_cdc20_smooth , D.bin_expression , ...
-        'color' , [.2 .2 .2] , 'symbol' , '');
-    data = DS.percent_unreplicated_not_trimmed_dbf2_smooth(strcmp(DS.TYPE , 'ORF'));
-    [~,p] = ttest2(data , D.percent_unreplicated_not_trimmed_dbf2_smooth(idx));
-    if p < .005
-        scatter(I-0.1 , 25 , 30,[.2 .2 .2] , '*' , 'LineWidth' , 3);
-        scatter(I+0.1 , 25 , 30,[.2 .2 .2] , '*' , 'LineWidth' , 3);
-    elseif p < .05
-        scatter(I , 25 , 30, [.2 .2 .2] , '*' , 'LineWidth' , 3);
-    end
+for I = 1:3
+    idx = find(DS.mRNA_bin == I & strcmp(DS.TYPE , 'ORF'));
+    data = DS.percent_unreplicated_not_trimmed_cdc20_DM(idx); data = data(~isnan(data));
+    scatter(repmat(I , 1 , length(data))+rand(1 , length(data))*0.3-0.15 , data , 20 , clrs1(6*I+4,:) , ...
+        'filled');
 end
-xlabel('Expression');
-ylabel('Degree underrep, ana');
-ylim([-25 30]);
+h = boxplot(DS.percent_unreplicated_not_trimmed_cdc20_DM(idx_orf) , DS.mRNA_bin(idx_orf) , 'color' , [.2 .2 .2] , 'symbol' , '');
+set(h , 'LineWidth' , 1.9);
+set(gca , 'Xtick' , [1:3] , 'XtickLabel' , {'<= 5% Q' , '5-95%' , '> 95% Q'});
+xlabel('mRNAseq'); ylabel('% unreplicated DM');
+ylim([-20 20]);
 
 subplot(2,2,3); hold on; grid on; set(gca , 'FontSize' , 12);
-clrs = parula(4*length(unq_bin));
-for I = 1:length(unq_bin)
-    idx = find(D.bin_expression == unq_bin(I));
-    scatter(repmat(I , length(idx) , 1)+randn(length(idx) , 1)*0.03-0.015 , D.percent_unreplicated_not_trimmed_cdc20_smooth(idx) , 30 , clrs(4*I-2,:) , 'filled' )
-    boxplot(D.percent_underreplicated_cdc20_not_trimmed_DM_dist , D.bin_expression , ...
-        'color' , [.2 .2 .2] , 'symbol' , '');
-    data = DS.percent_underreplicated_cdc20_not_trimmed_DM_dist(strcmp(DS.TYPE , 'ORF'));
-    [~,p] = ttest2(data , D.percent_underreplicated_cdc20_not_trimmed_DM_dist(idx));
-    if p < .005
-        scatter(I-0.1 , 25 , 30, [.2 .2 .2] , '*' , 'LineWidth' , 3);
-        scatter(I+0.1 , 25 , 30, [.2 .2 .2] , '*' , 'LineWidth' , 3);
-    elseif p < .05
-        scatter(I , 25 , 30, [.2 .2 .2] , '*' , 'LineWidth' , 3);
-    end
+for I = 1:3
+    idx = find(DS.PROseq_bin == I & strcmp(DS.TYPE , 'ORF'));
+    data = DS.percent_unreplicated_not_trimmed_cdc20_smooth(idx); data = data(~isnan(data));
+    scatter(repmat(I , 1 , length(data))+rand(1 , length(data))*0.3-0.15 , data , 20 , clrs2(8*I+4,:) , ...
+        'filled');
 end
-xlabel('Expression');
-ylabel('Degree underrep DM, meta');
-ylim([-20 40]);
+h = boxplot(DS.percent_unreplicated_not_trimmed_cdc20_smooth(idx_orf) , DS.PROseq_bin(idx_orf) , 'color' , [.2 .2 .2] , 'symbol' , '');
+set(h , 'LineWidth' , 1.9);
+set(gca , 'Xtick' , [1:3] , 'XtickLabel' , {'<= 5% Q' , '5-95%' , '> 95% Q'});
+xlabel('PROseq'); ylabel('% unreplicated');
+ylim([-20 70]);
 
 subplot(2,2,4); hold on; grid on; set(gca , 'FontSize' , 12);
-clrs = parula(4*length(unq_bin));
-for I = 1:length(unq_bin)
-    idx = find(D.bin_expression == unq_bin(I));
-    scatter(repmat(I , length(idx) , 1)+randn(length(idx) , 1)*0.03-0.015 , D.percent_unreplicated_not_trimmed_cdc20_smooth(idx) , 30 , clrs(4*I-2,:) , 'filled' )
-    boxplot(D.percent_underreplicated_dbf2_not_trimmed_DM_dist , D.bin_expression , ...
-        'color' , [.2 .2 .2] , 'symbol' , '');
-	data = DS.percent_underreplicated_dbf2_not_trimmed_DM_dist(strcmp(DS.TYPE , 'ORF'));
-    [~,p] = ttest2(data , D.percent_underreplicated_dbf2_not_trimmed_DM_dist(idx));
-    if p < .005
-        scatter(I-0.1 , 25 , 30, [.2 .2 .2] , '*' , 'LineWidth' , 3);
-        scatter(I+0.1 , 25 , 30, [.2 .2 .2] , '*' , 'LineWidth' , 3);
-    elseif p < .05
-        scatter(I , 25 ,30,  [.2 .2 .2] , '*' , 'LineWidth' , 3);
-    end
+for I = 1:3
+    idx = find(DS.PROseq_bin == I & strcmp(DS.TYPE , 'ORF'));
+    data = DS.percent_unreplicated_not_trimmed_cdc20_DM(idx); data = data(~isnan(data));
+    scatter(repmat(I , 1 , length(data))+rand(1 , length(data))*0.3-0.15 , data , 20 , clrs2(8*I+4,:) , ...
+        'filled');
 end
-xlabel('Expression');
-ylabel('Degree underrep DM, ana');
-ylim([-25 30]);
+h = boxplot(DS.percent_unreplicated_not_trimmed_cdc20_DM(idx_orf) , DS.PROseq_bin(idx_orf) , 'color' , [.2 .2 .2] , 'symbol' , '');
+set(h , 'LineWidth' , 1.9);
+set(gca , 'Xtick' , [1:3] , 'XtickLabel' , {'<= 5% Q' , '5-95%' , '> 95% Q'});
+xlabel('PROseq'); ylabel('% unreplicated DM');
+ylim([-20 20]);
 
-%% how expression correlates with underreplication
-load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__features.mat');
-D = readtable('~/Develop/Mendoza__ReplicationEvolution/Data/ExternalData/Yeast_mRNA_abundance_Lipson_Causey.xls');
-D = table2dataset(D);
-DS = join(DS , D , 'Keys' , 'ORF' , 'Type' , 'Left' , 'MergeKeys' , true);
-%
-idx = find(strcmp(DS.TYPE , 'ORF') & ~isnan(DS.Avg) & ~isnan(DS.percent_unreplicated_not_trimmed_cdc20));
-D = DS(idx , :);
-
-%%
-%quantile_expression_bins = [quantile(data , 0) quantile(data , 0.2) quantile(data , 0.4) quantile(data , 0.6) quantile(data , 0.8)  quantile(data , 1)];
-figure; 
-K = 5;
-data = D.Avg;
-quantile_expression_bins = [quantile(data , 0) ...
-    quantile(data , 0.1)  quantile(data , 0.2)  ...
-    quantile(data , 0.95) quantile(data , 0.99)  ...
-    quantile(data , 1)];
-
-clrs = parula(4*K);
-subplot(2,1,1);hold on; grid on; set(gca , 'FontSize' , 12);
-data = NaN(length(D) , K);
-for I = 1:K
-    idx = find(D.Avg >= quantile_expression_bins(I) ...
-        & D.Avg < quantile_expression_bins(I+1));
-    data(1:length(idx) , I) = D.percent_unreplicated_not_trimmed_cdc20(idx);
-    scatter(repmat(I , length(idx) , 1)+randn(length(idx) , 1)*0.03 - 0.015 , ...
-       D.percent_unreplicated_not_trimmed_cdc20(idx), 10 , clrs(4*I-2,:) , 'filled');
-end
-boxplot(data , 'color' , [.2 .2 .2] , 'symbol' , '' , 'notch' , 'on');
-%plot([1:K] , nanmedian(data) , 'LineWidth' , 2 , 'color' , [.2 .2 .2]);
-ylim([-20 50]);
-set(gca , 'Xtick' , [1:5] , 'XtickLabel' , {'0-20%' , '20-40%' , '40-60%' , '60-80%' , '80-100%'});
-xlabel('Expression, quantile');
-ylabel('Degree underreplication');
-
-subplot(2,1,2);hold on; grid on; set(gca , 'FontSize' , 12);
-data = D.Avg;
-quantile_expression_bins = [quantile(data , 0) ...
-    quantile(data , 0.1)  quantile(data , 0.2)  ...
-    quantile(data , 0.95) quantile(data , 0.99)  ...
-    quantile(data , 1)];
-data = NaN(length(D) , K);
-for I = 1:K
-    idx = find(D.Avg >= quantile_expression_bins(I) ...
-        & D.Avg < quantile_expression_bins(I+1));
-    data(1:length(idx) , I) = D.percent_underreplicated_cdc20_not_trimmed_DM_dist(idx);
-    scatter(repmat(I , length(idx) , 1)+randn(length(idx) , 1)*0.03 - 0.015 , ...
-       D.percent_unreplicated_not_trimmed_cdc20(idx), 10 , clrs(4*I-2,:) , 'filled');
-end
-boxplot(data , 'color' , [.2 .2 .2] , 'symbol' , '' , 'notch' , 'on');
-ylim([-20 60]);
-set(gca , 'Xtick' , [1:5] , 'XtickLabel' , {'0-20%' , '20-40%' , '40-60%' , '60-80%' , '80-100%'});
-xlabel('Expression, quantile');
-ylabel('Degree underreplication DM');
-print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Manuscript/Fig5C');
-%%
-K = 5;
-data = D.Avg;
-quantile_expression_bins = [quantile(data , 0) ...
-    quantile(data , 0.2)  quantile(data , 0.4)  ...
-    quantile(data , 0.6) quantile(data , 0.8)  ...
-    quantile(data , 1)];
-
-
-data = NaN(length(D) , K);
-for I = 1:K
-    idx = find(D.Avg >= quantile_expression_bins(I) ...
-        & D.Avg < quantile_expression_bins(I+1));
-    data(1:length(idx) , I) = D.percent_unreplicated_not_trimmed_cdc20(idx);
-
-end
-p_vals = NaN(K , K);
-for I = 1:K-1
-    for J = I+1:K
-        [~,p] = ttest2(data(:,I) , data(:,J));
-        p_vals(I,J) = p;
-    end
-end
-
-
-
-
-
-
-
-
-
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Manuscript/Fig__Expression_median__VS_underreplication');
 
 
 

@@ -1,8 +1,12 @@
-%%
+%% barplots showing R^2 for model to predict evolution data from distance-to-end or cdc20 arrest
+% AM March 2018
+
+%% load data
 cd('~/Develop/Mendoza__ReplicationEvolution/Figures/Lucas__EvolConf');
 addpath(genpath('~/Develop/matlab'));
-%% for SNP/InDel frequency 
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__200bp.mat');
+
+%% for SNP/InDel frequency 
 DS.dist_log = log2(DS.dist_to_the_end_kb);
 DS = DS(: , {'dist_log' , 'Trep_spline' , 'percent_unreplicated_not_trimmed_cdc20_smooth' , 'freq_SNP' , 'freq_indel'});
 idx = find(~isnan(DS.percent_unreplicated_not_trimmed_cdc20_smooth));
@@ -80,7 +84,7 @@ for Z = 1:2
     title(title_names{Z}); 
     xlim([.5 4.5]);
     set(gca , 'Xtick' , [1:4]);
-    print('-dpng' , save_names{Z});
+    print('-dpng' , save_names{Z} , '-r600');
 end
 
 

@@ -5,6 +5,7 @@ GC.Properties.VariableNames = {'chr' 'start_point' 'end_point' 'GC'};
 T = join(dataset2table(DS) , GC , 'Key' , {'chr' 'start_point' 'end_point'});
 T = sortrows(T,'dist_to_the_end_kb','ascend');
 cd('~/Desktop/G4')
+
 %% calc DM
 T = T( ~isinf(T.percent_unreplicated_not_trimmed_cdc20) & ~isnan(T.percent_unreplicated_not_trimmed_cdc20) ,:) ; 
 
@@ -13,7 +14,22 @@ S = CalcDM_Newman06( T.dist_to_the_end_kb , T.percent_unreplicated_not_trimmed_c
 T.DM_ypred = S.DM_ypred ; 
 T.DM_diff = S.DM_diff ; 
 
-%%
+%% load G4 quadruplex data
+
+G4H = readtable( '~/Develop/Mendoza__ReplicationEvolution/Data/ExternalData/Bedrat16/S1_W25_sum_200.bed' ,'Delimiter','\t','FileType','text','Format','%s%d%d%f','TreatAsEmpty' ,'.');
+G4H.Properties.VariableNames = {'chr' 'start_point' 'end_point' 'value'};
+Q = innerjoin( G4H , T , 'Key', {'chr' 'start_point' 'end_point'});
+
+%% Figure
+fh = figure('units','centimeters','position',[5 5 4 6 ]);
+idx = Q.value > 100 ; 
+boxplot(Q.DM_diff , idx ,'symbol','')
+ylim([-15 50])
+ylabel('% underreplication')
+set(gca,'xtick',[])
+
+
+%% playing with more analysis down here
 fn = dir('*.bed');
 for I = 1:numel(fn)
     G4H = readtable( fn(I).name ,'Delimiter','\t','FileType','text','Format','%s%d%d%f','TreatAsEmpty' ,'.');
@@ -53,15 +69,3 @@ for I = 1:numel(fn)
 end
 disp('\n')
 
-%% Figure
-
-G4H = readtable( 'S1_W25_sum_200.bed' ,'Delimiter','\t','FileType','text','Format','%s%d%d%f','TreatAsEmpty' ,'.');
-G4H.Properties.VariableNames = {'chr' 'start_point' 'end_point' 'value'};
-Q = innerjoin( G4H , T , 'Key', {'chr' 'start_point' 'end_point'});
-
-fh = figure('units','centimeters','position',[5 5 4 6 ]);
-idx = Q.value > 100 ; 
-boxplot(Q.DM_diff , idx ,'symbol','')
-ylim([-15 50])
-ylabel('% underreplication')
-set(gca,'xtick',[])

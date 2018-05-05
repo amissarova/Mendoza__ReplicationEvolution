@@ -6,24 +6,15 @@ T = join(dataset2table(DS) , GC , 'Key' , {'chr' 'start_point' 'end_point'});
 T = sortrows(T,'dist_to_the_end_kb','ascend');
 cd('~/Desktop/G4')
 
-%% calc DM
-T = T( ~isinf(T.percent_unreplicated_not_trimmed_cdc20) & ~isnan(T.percent_unreplicated_not_trimmed_cdc20) ,:) ; 
-
-DM_window_size = 100 ;
-S = CalcDM_Newman06( T.dist_to_the_end_kb , T.percent_unreplicated_not_trimmed_cdc20  , DM_window_size , 0 );
-T.DM_ypred = S.DM_ypred ; 
-T.DM_diff = S.DM_diff ; 
-
 %% load G4 quadruplex data
-
 G4H = readtable( '~/Develop/Mendoza__ReplicationEvolution/Data/ExternalData/Bedrat16/S1_W25_sum_200.bed' ,'Delimiter','\t','FileType','text','Format','%s%d%d%f','TreatAsEmpty' ,'.');
 G4H.Properties.VariableNames = {'chr' 'start_point' 'end_point' 'value'};
 Q = innerjoin( G4H , T , 'Key', {'chr' 'start_point' 'end_point'});
-
+Q.value( isnan(Q.value)) = 0 ; % '.' in bedtools map is from data w/no value. here that's the same as zero
 %% Figure
 fh = figure('units','centimeters','position',[5 5 4 6 ]);
-idx = Q.value > 100 ; 
-boxplot(Q.DM_diff , idx ,'symbol','')
+idx = Q.value > prctile(Q.value,99.99) ; 
+boxplot(Q.percent_underreplicated_cdc20_not_trimmed_DM_dist , idx ,'symbol','')
 ylim([-15 50])
 ylabel('% underreplication')
 set(gca,'xtick',[])

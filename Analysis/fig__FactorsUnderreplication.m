@@ -1,6 +1,312 @@
 %% all figures regarding subtelomeric underreplication
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__200bp.mat');
 
+%% dist and rep time
+DS.dist_log = log2(DS.dist_to_the_end_kb);
+DS.dist_ARS_log = log2(DS.dist_to_ARS);
+idx = find(~isnan(DS.percent_unreplicated_not_trimmed_cdc20_smooth) );
+T = DS(idx , :);
+rand_vec = rand(length(T) , 1);
+T.random_num = NaN(length(T) , 1);
+for I = 1:length(T)
+    T.random_num(I) = rand_vec(I);
+end
+T = sortrows(T , 'random_num');
+K = 20;
+N = round(length(T)/K);
+all_idx = [1:length(T)];
+idx = cell(K , 1);
+for I = 1:K-1
+    temp_idx = all_idx(1:N);
+    all_idx = setdiff(all_idx , temp_idx);
+    idx{I} = temp_idx;
+end 
+idx{K} = all_idx;
+
+%
+parameters_idx = cell(3,1);
+parameters_idx{1} = [23]; parameters_idx{2} = [11]; parameters_idx{3} = [23 11]; 
+R_train = cell(length(parameters_idx),1);
+R_test = cell(length(parameters_idx),1);
+for I = 1:length(parameters_idx)
+    X = double( T(:,parameters_idx{I}));
+    Y = double( T(:, 18)) ;
+    temp_train = NaN(K,1);
+    temp_test = NaN(K,1);
+    for J = 1:K
+        %aa = [I J]
+        idx_train = setdiff([1:length(T)] , idx{J});
+        idx_test = idx{J};
+        Mdl = fitglm(X(idx_train , :) , Y(idx_train , :) );
+        Y_train = predict(Mdl , X(idx_train , :));
+        Y_test = predict(Mdl , X(idx_test , :));
+        
+        mean_y = nanmean(Y(idx_train ));
+        SS_tot = sum((Y(idx_train) - mean_y).^2);
+        SS_res = sum((Y(idx_train) - Y_train).^2);
+        temp_train(J) = 1 - (SS_res/SS_tot);
+        
+        mean_y = nanmean(Y(idx_test));
+        SS_tot = sum((Y(idx_test) - mean_y).^2);
+        SS_res = sum((Y(idx_test) - Y_test).^2);
+        temp_test(J) = 1 - (SS_res/SS_tot);
+    end
+    R_train{I} = temp_train;
+    R_test{I} = temp_test;
+end
+
+
+legend_titles = {'log (distance to the end)' , 'Replication time' , 'both'};
+clrs = parula(12); clrs_set = [clrs(7,:) ; clrs(10,:) ; clrs(3,:)];
+figure('units','centimeters','position',[5 5 8 8]); hold on; grid on; set(gca , 'FontSize' , 10 ); 
+data = [R_test{1} R_test{2} R_test{3}];
+h1 = boxplot(data , 'color' , [.2 .2 .2], 'symbol','');
+h = findobj(gca,'Tag','Box');set(h1 , 'LineWidth' , 1.9);
+for j=1:length(h)
+    patch(get(h(3-j+1),'XData'),get(h(3-j+1),'YData'), clrs_set(3-j+1,:) ,'FaceAlpha',.5 , 'Display' , legend_titles{j});
+end
+legend('location' , 'best');
+title('All gDNA');
+set(gca , 'Xtick' , []);
+%print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2D_all' , '-r300');
+
+%%
+
+DS.dist_log = log2(DS.dist_to_the_end_kb);
+DS.dist_ARS_log = log2(DS.dist_to_ARS);
+idx = find(~isnan(DS.percent_unreplicated_not_trimmed_cdc20_smooth) );
+T = DS(idx , :);
+rand_vec = rand(length(T) , 1);
+T.random_num = NaN(length(T) , 1);
+for I = 1:length(T)
+    T.random_num(I) = rand_vec(I);
+end
+T = sortrows(T , 'random_num');
+K = 25;
+N = round(length(T)/K);
+all_idx = [1:length(T)];
+idx = cell(K , 1);
+for I = 1:K-1
+    temp_idx = all_idx(1:N);
+    all_idx = setdiff(all_idx , temp_idx);
+    idx{I} = temp_idx;
+end 
+idx{K} = all_idx;
+
+%
+parameters_idx = cell(3,1);
+parameters_idx{1} = [23]; parameters_idx{2} = [23 11]; 
+parameters_idx{3} = [23 11 37];  
+R_train = cell(length(parameters_idx),1);
+R_test = cell(length(parameters_idx),1);
+for I = 1:length(parameters_idx)
+    X = double( T(:,parameters_idx{I}));
+    Y = double( T(:, 18)) ;
+    temp_train = NaN(K,1);
+    temp_test = NaN(K,1);
+    for J = 1:K
+        %aa = [I J]
+        idx_train = setdiff([1:length(T)] , idx{J});
+        idx_test = idx{J};
+        Mdl = fitglm(X(idx_train , :) , Y(idx_train , :) );
+        Y_train = predict(Mdl , X(idx_train , :));
+        Y_test = predict(Mdl , X(idx_test , :));
+        
+        mean_y = nanmean(Y(idx_train ));
+        SS_tot = sum((Y(idx_train) - mean_y).^2);
+        SS_res = sum((Y(idx_train) - Y_train).^2);
+        temp_train(J) = 1 - (SS_res/SS_tot);
+        
+        mean_y = nanmean(Y(idx_test));
+        SS_tot = sum((Y(idx_test) - mean_y).^2);
+        SS_res = sum((Y(idx_test) - Y_test).^2);
+        temp_test(J) = 1 - (SS_res/SS_tot);
+    end
+    R_train{I} = temp_train;
+    R_test{I} = temp_test;
+end
+
+%%
+legend_titles = {'log (distance to the end)' , '+Replication time' , '+Transc. rate' , '+G4' , '+GC'};
+clrs = parula(12); clrs1 = hot(12); clrs2 = summer(12); clrs3 = lines(6); 
+clrs_set = [clrs(7,:) ; clrs(10,:) ; clrs(3,:) ; clrs1(3,:) ; clrs2(2,:) ; clrs3(4,:)];
+figure('units','centimeters','position',[5 5 8 8]); hold on; grid on; set(gca , 'FontSize' , 10 ); 
+data = [R_test{1} R_test{2} R_test{3} ];
+h1 = boxplot(data , 'color' , [.2 .2 .2], 'symbol','');
+h = findobj(gca,'Tag','Box');set(h1 , 'LineWidth' , 1.9);
+N = 3;
+for j=1:length(h)
+    patch(get(h(N-j+1),'XData'),get(h(N-j+1),'YData'), clrs_set(N-j+1,:) ,'FaceAlpha' , .5);
+end
+legend(legend_titles,'location' , 'SouthOutside');
+set(gca , 'Xtick' , []);
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2D_3features' , '-r300');
+
+
+
+
+
+%%
+DS = sortrows(DS, 'dist_to_the_end_kb');
+data_x = DS.dist_to_the_end_kb;
+data_y = DS.percent_unreplicated_not_trimmed_cdc20_smooth;
+S = CalcDM_Newman06( data_x , data_y  , 200 , 1 );
+DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman = S.DM_diff(:);
+DS.median_values_DM = S.DM_ypred(:);
+%% Original dist to the end -- underrep
+clrs2 = hot(12); clrs3 = lines(6); clrs4 = parula(12); clrs5 = summer(12);
+figure('units','centimeters','position',[5 5 8 8]); hold on; grid on;
+h1 = scatter(DS.dist_to_the_end_kb , DS.percent_unreplicated_not_trimmed_cdc20_smooth , ...
+    20 , [.7 .7 .7] , 'filled' , 'MarkerFaceAlpha',.2 , 'Display' , 'all 200-bp windows');
+h2 = plot(DS.dist_to_the_end_kb , DS.median_values_DM , 'LineWidth' , 3.5 , 'color' , clrs2(3,:) , 'Display' , 'running median');
+ylim([-20 65]);
+idx = find(DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman > 20 , 15);
+idx = idx(end);
+h3 = plot([DS.dist_to_the_end_kb(idx) DS.dist_to_the_end_kb(idx)] , ...
+    [DS.median_values_DM(idx) DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)] , ...
+    'LineWidth' , 2.5 , 'color' , clrs4(2,:), 'Display' , sprintf('DM = %.2f' , DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)));
+
+idx = find(DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman < -10 , 1005);
+idx = idx(end);
+h4 = plot([DS.dist_to_the_end_kb(idx) DS.dist_to_the_end_kb(idx)] , ...
+    [DS.median_values_DM(idx) DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)] , ...
+    'LineWidth' , 2.5 , 'color' , clrs5(3,:) ,'Display' , sprintf('DM = %.2f' , DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)));
+legend('location' , 'ne');
+
+idx = find(DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman > 20 , 15);
+idx = idx(end);
+h5 = scatter(DS.dist_to_the_end_kb(idx) , DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx),...
+    30 , clrs4(2,:) , 'filled');
+h6 = plot([DS.dist_to_the_end_kb(idx)-25 DS.dist_to_the_end_kb(idx)+25] , ...
+    [DS.median_values_DM(idx) DS.median_values_DM(idx)] , ...
+    'LineWidth' , 1.5 , 'color' , clrs4(2,:));
+h7 = plot([DS.dist_to_the_end_kb(idx)-25 DS.dist_to_the_end_kb(idx)+25] , ...
+    [DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)-1.6 DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)-1.6] , ...
+    'LineWidth' , 1.5 , 'color' , clrs4(2,:));
+
+idx = find(DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman < -10 , 1005);
+idx = idx(end);
+h8 = scatter(DS.dist_to_the_end_kb(idx) , DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx),...
+    30 , clrs5(3,:) , 'filled');
+h9 = plot([DS.dist_to_the_end_kb(idx)-25 DS.dist_to_the_end_kb(idx)+25] , ...
+    [DS.median_values_DM(idx) DS.median_values_DM(idx)] , ...
+    'LineWidth' , 1.5 , 'color' , clrs5(3,:));
+h10 = plot([DS.dist_to_the_end_kb(idx)-25 DS.dist_to_the_end_kb(idx)+25] , ...
+    [DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)+1.6 DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)+1.6] , ...
+    'LineWidth' , 1.5 , 'color' , clrs5(3,:));
+legend([h1 h2 h3 h4] ,'location' , 'ne');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2E__dist' , '-r300');
+
+%%
+data_dist = log10(DS.dist_to_the_end_kb);
+clrs2 = hot(12); clrs3 = lines(6); clrs4 = parula(12); clrs5 = summer(12);
+figure('units','centimeters','position',[5 5 8 8]); hold on; grid on;
+h1 = scatter(data_dist , DS.percent_unreplicated_not_trimmed_cdc20_smooth , ...
+    20 , [.7 .7 .7] , 'filled' , 'MarkerFaceAlpha',.2 , 'Display' , 'all 200-bp windows');
+h2 = plot(data_dist , DS.median_values_DM , 'LineWidth' , 3.5 , 'color' , clrs2(3,:) , 'Display' , 'running median');
+ylim([-20 65]);
+idx = find(DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman > 20 , 15);
+idx = idx(end);
+h3 = plot([data_dist(idx) data_dist(idx)] , ...
+    [DS.median_values_DM(idx) DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)] , ...
+    'LineWidth' , 2.5 , 'color' , clrs4(2,:), 'Display' , sprintf('DM = %.2f' , DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)));
+
+idx = find(DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman < -10 , 1005);
+idx = idx(end);
+h4 = plot([data_dist(idx) data_dist(idx)] , ...
+    [DS.median_values_DM(idx) DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)] , ...
+    'LineWidth' , 2.5 , 'color' , clrs5(3,:) ,'Display' , sprintf('DM = %.2f' , DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)));
+legend('location' , 'ne');
+
+idx = find(DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman > 20 , 15);
+idx = idx(end);
+h5 = scatter(data_dist(idx) , DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx),...
+    30 , clrs4(2,:) , 'filled');
+h6 = plot([data_dist(idx)-0.5 data_dist(idx)+0.5] , ...
+    [DS.median_values_DM(idx) DS.median_values_DM(idx)] , ...
+    'LineWidth' , 1.5 , 'color' , clrs4(2,:));
+h7 = plot([data_dist(idx)-0.5 data_dist(idx)+0.5] , ...
+    [DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)-1.6 DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)-1.6] , ...
+    'LineWidth' , 1.5 , 'color' , clrs4(2,:));
+
+idx = find(DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman < -10 , 1005);
+idx = idx(end);
+h8 = scatter(data_dist(idx) , DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx),...
+    30 , clrs5(3,:) , 'filled');
+h9 = plot([data_dist(idx)-0.5 data_dist(idx)+0.5] , ...
+    [DS.median_values_DM(idx) DS.median_values_DM(idx)] , ...
+    'LineWidth' , 1.5 , 'color' , clrs5(3,:));
+h10 = plot([data_dist(idx)-0.5 data_dist(idx)+0.5] , ...
+    [DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)+1.6 DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx)+1.6] , ...
+    'LineWidth' , 1.5 , 'color' , clrs5(3,:));
+legend([h1 h2 h3 h4] ,'location' , 'sw');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2E__log10_dist' , '-r300');
+
+
+%%
+figure ('units','centimeters','position',[5 5 10 10]);
+subplot(1,2,2); hold on; grid on; set(gca , 'FontSize' , 10);
+trep_grid = [0 40 45 50 70];
+data = NaN(length(DS) , length(trep_grid)-1);
+clrs = winter(4*length(trep_grid)-4);
+for I = 1:length(trep_grid)-1
+    idx = find(DS.Trep_spline > trep_grid(I) & DS.Trep_spline < trep_grid(I+1) );
+    data(1:length(idx) , I) = DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(idx);
+%     scatter(repmat(I,length(idx),1)+randn(length(idx),1)*0.03-0.015 , ...
+%        data(1:length(idx) , I) , 10 , clrs(4*I-2,:) , 'filled' , 'MarkerFaceAlpha' , .1);
+end
+legend_titles = {'<= 40 min' , '40-45 min' , '45-50 min' , '> 50 min'};
+h1 = boxplot(data , 'color' , [.2 .2 .2]  , 'symbol' , '');
+h = findobj(gca,'Tag','Box'); set(h1 , 'LineWidth' , 1.5);
+for j=1:4
+    patch(get(h(4-j+1),'XData'),get(h(4-j+1),'YData'), clrs(4*j-2,:) ,'FaceAlpha',.5 , 'Display' , legend_titles{j});
+end
+
+ylim([-20 20]);
+set(gca , 'Xtick' , []);
+%set(gca , 'Xtick' , [1:length(trep_grid)-1] , 'XtickLabel' , ...
+%    {'<= 40 min' , '40-45 min' , '45-50 min' , '> 50 min'} );
+%xlabel('Replication timing, min after \alpha factor release');
+ylabel('under-replication DM');
+legend('location' , 'SouthOutside');
+
+subplot(1,2,1); hold on; grid on; set(gca , 'FontSize' , 10);
+trep_grid = [0 40 45 50 70];
+data = NaN(length(DS) , length(trep_grid)-1);
+clrs = winter(4*length(trep_grid)-4);
+for I = 1:length(trep_grid)-1
+    idx = find(DS.Trep_spline > trep_grid(I) & DS.Trep_spline < trep_grid(I+1) );
+    data(1:length(idx) , I) = DS.percent_unreplicated_not_trimmed_cdc20_smooth(idx);
+    %scatter(repmat(I,length(idx),1)+randn(length(idx),1)*0.03-0.015 , ...
+    %   data(1:length(idx) , I) , 10 , clrs(4*I-2,:) , 'filled' , 'MarkerFaceAlpha' , .1);
+end
+legend_titles = {'<= 40 min' , '40-45 min' , '45-50 min' , '> 50 min'};
+h1 = boxplot(data , 'color' , [.2 .2 .2]  , 'symbol' , '');
+h = findobj(gca,'Tag','Box'); set(h1 , 'LineWidth' , 1.5);
+for j=1:4
+    patch(get(h(4-j+1),'XData'),get(h(4-j+1),'YData'), clrs(4*j-2,:) ,'FaceAlpha',.5 , 'Display' , legend_titles{j});
+end
+set(h , 'LineWidth' , 1.5);
+ylim([-20 70]);
+set(gca , 'Xtick' , []);
+%set(gca , 'Xtick' , [1:length(trep_grid)-1] , 'XtickLabel' , ...
+%    {'<= 40 min' , '40-45 min' , '45-50 min' , '> 50 min'} );
+%xlabel('Replication timing, min after \alpha factor release');
+legend('location' , 'SouthOutside');
+ylabel('% unreplicated cells');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2F' , '-r300');
+
+%%
+clrs = parula(12);
+figure('units','centimeters','position',[5 5 8 8]); hold on; grid on;
+scatter(DS.Trep_spline , DS.percent_unreplicated_not_trimmed_cdc20_smooth , 20 , clrs(5,:) , 'filled' , 'MarkerFaceAlpha' , .1)
+xlim([10 65]);
+ylim([-20 70]);
+R = corrcoef(DS.Trep_spline , DS.percent_unreplicated_not_trimmed_cdc20_smooth);
+title(sprintf('R = %.1f.' , R(1,2)));
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2F__scatter' , '-r300');
+
+
 %%
 D = DS;
 unq_dist_to_the_end = [0.2 : 0.2 : 765];

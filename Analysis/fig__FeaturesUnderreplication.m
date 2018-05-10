@@ -6,7 +6,7 @@ idx = find(~isnan(DS.median_PROseq) & strcmp(DS.TYPE , 'ORF') );
 DS = DS(idx , :);
 DS.PROseq_bin = NaN(length(DS) , 1);
 for I = 1:length(DS)
-    if DS.median_PROseq(I) <= 2.9842
+    if DS.max_PROseq(I) < 76.2
         DS.PROseq_bin(I) = 1;
     else
         DS.PROseq_bin(I) = 2;
@@ -41,8 +41,11 @@ set(gca , 'Xtick' , []);
 ylabel('under-replication DM');
 ylim([-15 15]);
 legend('location' , 'SouthOutside');
+%print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2H' , '-r300');
+%%
+figure; hold on;
+scatter(DS.percent_unreplicated_not_trimmed_cdc20_smooth , DS.median_PROseq);
 
-print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2H' , '-r300');
 %%
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__features.mat');
 %%

@@ -1,7 +1,7 @@
 %% navigate to the folder and download DS
 addpath(genpath('~/Develop/matlab'));
 addpath(genpath('~/Google Drive/'));
-cd ~/Develop/Mendoza__ReplicationEvolution/Data/
+cd ~/Develop/Mendoza__ReplicationEvolution/GenerateData/Michi__DS
 load('MutantChr200.mat');
 DS = G;
 %% Fig 2A: example of chromosome 5, left arm - % unreplicated against VS distance to the end, kbp
@@ -30,7 +30,7 @@ for I = 1:length(unq_mutant)
     set(h,'facealpha',.3);
 end
 xlim([0 K]);
-ylim([0 60]);
+ylim([-9 60]);
 set(gca , 'Xtick' , [0 25 50 75]);
 set(gca , 'Ytick' , [0 20 40 60]);
 title(strcat ( DS.chr{idx(1)} , ', left'));
@@ -159,7 +159,7 @@ for I1 = 1:length(unq_mutant)
 end
 h = histogram(data , [0:5:40] );
 %h.EdgeColor = 'w';
-set(h , 'EdgeColor' , 'w' , 'FaceColor' , clrs1(3,:));
+set(h , 'EdgeColor' , clrs1(1,:) , 'FaceColor' , clrs1(3,:));
 xlabel('Length of under-replicated subtelomeric region, kbp');
 ylabel('Number of chromosomal ends');
 %set(gcf , 'PaperPosition' , [0 0 20 20]);
@@ -178,7 +178,7 @@ for I1 = 1:length(unq_mutant)
     end
 end
 h = histogram(data , [40:5:70] );
-set(h , 'EdgeColor' , 'w' , 'FaceColor' , clrs1(3,:));
+set(h , 'EdgeColor' , clrs1(1,:) , 'FaceColor' , clrs1(3,:));
 xlabel('% unreplicated cells at the last kbp');
 ylabel('Number of chromosomal ends');
 %set(gcf , 'PaperPosition' , [0 0 20 20]);

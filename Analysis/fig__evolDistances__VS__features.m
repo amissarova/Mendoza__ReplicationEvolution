@@ -1200,20 +1200,147 @@ for I = 1:length(dist_to_the_end_bin) - 1
     
 end
 
+%%
+DS.underrep_bin = NaN(length(DS) , 1);
+for I = 1:length(DS)
+    if DS.percent_unreplicated_not_trimmed_cdc20_smooth(I) <= 20
+        DS.underrep_bin(I) = 1;
+    elseif DS.percent_unreplicated_not_trimmed_cdc20_smooth(I) <= 30
+        DS.underrep_bin(I) = 2;
+    elseif DS.percent_unreplicated_not_trimmed_cdc20_smooth(I) <= 40
+        DS.underrep_bin(I) = 3;
+    else
+        DS.underrep_bin(I) = 4;
+    end
+end
+%%
+clrs1 = winter(8);
+figure('units','centimeters','position',[5 5 9 9]);
+legend_titles = {'<20' , '20-30' , '30-40' , '>40'};
+subplot(1,2,1); hold on; grid on; set(gca , 'FontSize' , 12);
+h1 = boxplot(DS.freq_SNP , DS.underrep_bin , 'color' , [.2 .2 .2] , 'symbol' , '');
+ylim([0 .175]);
+set(h1 , 'LineWidth' , 1.5);
+h = findobj(gca,'Tag','Box'); set(h1 , 'LineWidth' , 1.5);
+for j=1:4
+    patch(get(h(4-j+1),'XData'),get(h(4-j+1),'YData'), clrs1(2*j,:) ,'FaceAlpha',.5 , 'Display' , legend_titles{j});
+end
+set(gca , 'Xtick' , []); 
+%xlabel('% unreplicated cells');
+ylabel('SNP frequency');
+legend('location' , 'SouthOutside');
 
+subplot(1,2,2); hold on; grid on; set(gca , 'FontSize' , 12);
+h1 = boxplot(DS.freq_indel , DS.underrep_bin , 'color' , [.2 .2 .2] , 'symbol' , '');
+ylim([0 .175]);
+set(h1 , 'LineWidth' , 1.5);
+h = findobj(gca,'Tag','Box'); set(h1 , 'LineWidth' , 1.5);
+for j=1:4
+    patch(get(h(4-j+1),'XData'),get(h(4-j+1),'YData'), clrs1(2*j,:) ,'FaceAlpha',.5 , 'Display' , legend_titles{j});
+end
+set(gca , 'Xtick' , []); 
+%xlabel('% unreplicated cells');
+ylabel('InDel frequency');
+legend('location' , 'SouthOutside');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig3/SNP_InDel__underrep' , '-r300');
 
+%%
+DS.underrep_DM_bin = NaN(length(DS) , 1);
+for I = 1:length(DS)
+    if DS.percent_underreplicated_cdc20_not_trimmed_DM_dist_Newman(I) <= 0
+        DS.underrep_DM_bin(I) = 1;
+    else 
+        DS.underrep_DM_bin(I) = 2;
+    end
+end
+%%
+clrs1 = autumn(8);
+figure('units','centimeters','position',[5 5 9 9]);
+legend_titles = {'<0' , '>0'};
+subplot(1,2,1); hold on; grid on; set(gca , 'FontSize' , 12);
+h1 = boxplot(DS.freq_SNP , DS.underrep_DM_bin , 'color' , [.2 .2 .2] , 'symbol' , '');
+ylim([0 .1]);
+set(h1 , 'LineWidth' , 1.5);
+h = findobj(gca,'Tag','Box'); set(h1 , 'LineWidth' , 1.5);
+for j=1:2
+    patch(get(h(2-j+1),'XData'),get(h(2-j+1),'YData'), clrs1(3*j,:) ,'FaceAlpha',.5 , 'Display' , legend_titles{j});
+end
+set(gca , 'Xtick' , []); 
+%xlabel('% unreplicated cells');
+ylabel('SNP frequency');
+legend('location' , 'SouthOutside');
 
+subplot(1,2,2); hold on; grid on; set(gca , 'FontSize' , 12);
+h1 = boxplot(DS.freq_indel , DS.underrep_DM_bin , 'color' , [.2 .2 .2] , 'symbol' , '');
+ylim([0 .06]);
+set(h1 , 'LineWidth' , 1.5);
+h = findobj(gca,'Tag','Box'); set(h1 , 'LineWidth' , 1.5);
+for j=1:2
+    patch(get(h(2-j+1),'XData'),get(h(2-j+1),'YData'), clrs1(3*j,:) ,'FaceAlpha',.5 , 'Display' , legend_titles{j});
+end
+set(gca , 'Xtick' , []); 
+%xlabel('% unreplicated cells');
+ylabel('InDel frequency');
+legend('location' , 'SouthOutside');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig3/SNP_InDel__underrepDM' , '-r300');
 
+%%
+load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__features.mat');
+idx = find(~isnan(DS.frac_conservation)); DS = DS(idx , :);
+DS.underrep_DM_bin = NaN(length(DS) , 1);
+for I = 1:length(DS)
+    if DS.percent_unreplicated_not_trimmed_cdc20_DM(I) <= 0
+        DS.underrep_DM_bin(I) = 1;
+    else 
+        DS.underrep_DM_bin(I) = 2;
+    end
+end
+DS.underrep_bin = NaN(length(DS) , 1);
+for I = 1:length(DS)
+    if DS.percent_unreplicated_not_trimmed_cdc20_smooth(I) <= 20
+        DS.underrep_bin(I) = 1;
+    elseif DS.percent_unreplicated_not_trimmed_cdc20_smooth(I) <= 30
+        DS.underrep_bin(I) = 2;
+    elseif DS.percent_unreplicated_not_trimmed_cdc20_smooth(I) <= 40
+        DS.underrep_bin(I) = 3;
+    else
+        DS.underrep_bin(I) = 4;
+    end
+end
 
+%%
+clrs1 = winter(8);
+figure('units','centimeters','position',[5 5 9 9]);
+legend_titles = {'<20' , '20-30' , '30-40' , '>40'};
+hold on; grid on; set(gca , 'FontSize' , 12);
+h1 = boxplot(DS.frac_conservation*100 , DS.underrep_bin , 'color' , [.2 .2 .2] , 'symbol' , '');
+ylim([80 100]);
+set(h1 , 'LineWidth' , 1.5);
+h = findobj(gca,'Tag','Box'); set(h1 , 'LineWidth' , 1.5);
+for j=1:4
+    patch(get(h(4-j+1),'XData'),get(h(4-j+1),'YData'), clrs1(2*j,:) ,'FaceAlpha',.5 , 'Display' , legend_titles{j});
+end
+set(gca , 'Xtick' , []); 
+%xlabel('% unreplicated cells');
+%ylabel('% strains with preserved gene');
+legend('location' , 'SouthOutside');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig3/FracConservation__underrep' , '-r300');
 
-
-
-
-
-
-
-
-
-
-
+%%
+clrs1 = autumn(8);
+figure('units','centimeters','position',[5 5 9 9]);
+legend_titles = {'<0' , '>0'};
+hold on; grid on; set(gca , 'FontSize' , 12);
+h1 = boxplot(DS.frac_conservation*100 , DS.underrep_DM_bin , 'color' , [.2 .2 .2] , 'symbol' , '');
+ylim([80 100]);
+set(h1 , 'LineWidth' , 1.5);
+h = findobj(gca,'Tag','Box'); set(h1 , 'LineWidth' , 1.5);
+for j=1:2
+    patch(get(h(2-j+1),'XData'),get(h(2-j+1),'YData'), clrs1(3*j,:) ,'FaceAlpha',.5 , 'Display' , legend_titles{j});
+end
+set(gca , 'Xtick' , []); 
+%xlabel('% unreplicated cells');
+%ylabel('% strains with preserved gene');
+legend('location' , 'SouthOutside');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig3/FracConservation__underrepDM' , '-r300');
 

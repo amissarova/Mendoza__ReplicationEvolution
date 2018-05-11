@@ -71,7 +71,7 @@ set(gca , 'Xtick' , []);
 %print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2D_all' , '-r300');
 
 %%
-
+load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__200bp.mat');
 DS.dist_log = log2(DS.dist_to_the_end_kb);
 DS.dist_ARS_log = log2(DS.dist_to_ARS);
 idx = find(~isnan(DS.percent_unreplicated_not_trimmed_cdc20_smooth) );

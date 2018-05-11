@@ -2,6 +2,24 @@
 
 %%
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__features.mat');
+
+%
+D = dataset('file' , 'mean_PROseq_minus.bed'); D = unique(D);
+DS = join(DS , D , 'Type', 'left' , 'Keys' , {'chr' , 'start_point' , 'end_point'} , 'MergeKeys' , true);
+D = dataset('file' , 'mean_PROseq_plus.bed'); D = unique(D);
+DS = join(DS , D , 'Type', 'left' , 'Keys' , {'chr' , 'start_point' , 'end_point'} , 'MergeKeys' , true);
+DS.mean_PROseq = NaN(length(DS) , 1);
+for I = 1:length(DS)
+    if strcmp(DS.mean_minus_PROseq{I} , '.') & ~strcmp(DS.mean_plus_PROseq{I} , '.')
+        DS.mean_PROseq(I) = str2num(DS.mean_plus_PROseq{I});
+    elseif ~strcmp(DS.mean_minus_PROseq{I} , '.') & strcmp(DS.mean_plus_PROseq{I} , '.')
+        DS.mean_PROseq(I) = abs(str2num(DS.mean_minus_PROseq{I}));
+    elseif ~strcmp(DS.mean_minus_PROseq{I} , '.') & ~strcmp(DS.mean_plus_PROseq{I} , '.')
+        DS.mean_PROseq(I) = nanmean([abs(str2num(DS.mean_minus_PROseq{I})) str2num(DS.mean_plus_PROseq{I})]);
+    end
+end
+        
+%%
 idx = find(~isnan(DS.median_PROseq) & strcmp(DS.TYPE , 'ORF') );
 DS = DS(idx , :);
 DS.PROseq_bin = NaN(length(DS) , 1);
@@ -127,8 +145,7 @@ D.middle_point = (D.start_point + D.end_point)/2;
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__features.mat');
 idx = find(strcmp(DS.TYPE , 'ORF') & ~isnan(DS.median_PROseq));
 DS = DS(idx , :);
-
-%%
+%
 DS.dist_log = log2(DS.dist_to_the_end_kb);
 DS.dist_ARS_log = log2(DS.dist_to_ARS);
 idx = find(~isnan(DS.percent_unreplicated_not_trimmed_cdc20_smooth) );

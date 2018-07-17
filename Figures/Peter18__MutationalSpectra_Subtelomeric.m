@@ -97,8 +97,14 @@ for I = 1:2:height(G)
    G.FE_or(I) = or.OddsRatio ;
 end
 G = G( ~isnan(G.FE_p),:);
-%% 
-alpha =  0.05 ; 
+%% plot using FDR calculations
+alpha =  0.1 ; 
+[G.FDR, G.FDR_Q ] = mafdr(G.FE_p) ;
+G.FDR_Storey =  mafdr( G.FE_p ,'BHFDR',true);
+G.p_Bon = (G.FE_p * height(G)) ;
+
+G.sig = G.FDR_Storey < alpha ; 
+
 G = sortrows(G,{'ref' 'context' 'alt'});
 uc = unique(G.context);
 [~,o]=sort(cellfun(@(X)X(2),uc));
@@ -110,8 +116,8 @@ for I = 1:numel(uc)
     subplot(8,8,I)
     hold on ;
     X = G( strcmp(G.context, uc{I}) & ~isnan(G.FE_p),:) ; 
-    p = find(X.FE_p * height(G) <= alpha) ; 
-    bar( 1:3 , X.FE_or ,'FaceColor',sqrt(clrs( find(ltrs==uc{I}(2)) , :)));
+    p = find(X.sig) ; 
+    bar( 1:3 , X.FE_or ,'FaceColor',(clrs( find(ltrs==uc{I}(2)) , :)).^0.3  );
     if ~isempty(p)
         bar( p ,  X.FE_or(p) ,'FaceColor',clrs( find(ltrs==uc{I}(2)) , :).^2);
         X(p,:)

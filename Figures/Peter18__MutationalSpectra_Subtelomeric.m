@@ -7,6 +7,8 @@ T = readtable([ '~/Downloads/' 'all.tab' ] ,'FileType','text','Delimiter','\t','
 T.Properties.VariableNames = {'chr_num' 'pos' 'ref' 'alt'};
 
 YG = fastaread('~/Data/Yeast/genome.fasta');
+load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__200bp_new.mat');
+
 %% keep only SNPs
 % T = T( cellfun(@length,T.alt)==1 , :); % removes SNPs w/multiple alt  alleles
 T = T( cellfun(@length,T.ref)==1 , :);
@@ -26,34 +28,6 @@ R.alt = arrayfun(@(X){X},new_alt) ;
 T = vertcat( T , R) ; 
 T = sortrows(T , {'chr_num' 'pos'});
 
-%% Define Subtelomeric regions as SUBTEL kb from the end
-SUBTEL = 25*1000 ; 
-T.Subtel = zeros(height(T),1);
-T.Subtel( T.pos < SUBTEL) = 1 ; 
-T.Subtel( T.pos > (max(T.pos)-SUBTEL)) = 1 ; 
-
-
-% %% summary stats. GroupCount will be the # of occurances of each mutation
-% G=grpstats(T,{'chr_num' 'ref' 'alt' 'Subtel'}, 'sum','DataVars','chr_num');
-% G.mut = arrayfun(@(I)sprintf('%s->%s',G.ref{I},G.alt{I}),1:height(G),'UniformOutput',false)' ; 
-% G.sum_chr_num = []; 
-% %% compute stats for each mutation & chr
-% G.FE_p = NaN(height(G),1);
-% G.FE_or = NaN(height(G),1);
-% for I = 1:2:height(G)
-%     st = sum(G.GroupCount( G.Subtel==1 & G.chr_num==G.chr_num(I)));
-%     nonst = sum(G.GroupCount( G.Subtel==0 & G.chr_num==G.chr_num(I)));
-%     [~,p,or] = fishertest( [ nonst st ; G.GroupCount(I) G.GroupCount(I+1)] );
-%    G.FE_p(I) = log10(p);
-%    G.FE_or(I) = or.OddsRatio ;
-% end
-% 
-% 
-% G2 = grpstats( G( ~isnan(G.FE_p) ,:) , {'ref' 'alt'},{'median' 'std'},'DataVars',{'FE_p' 'FE_or'});
-% G2 = sortrows(G2,'median_FE_p')
-
-
-
 %% Mutational context
 % confirm that the ref allele corresponds to this genome version
 %  find(~(YG(1).Sequence(T.pos(T.chr_num==1)) == [T.ref{T.chr_num==1}]))
@@ -65,27 +39,30 @@ for I = 1:16
     Q2 = vertcat(Q2,Q);
 end
 T = Q2; 
-clear 'Q' 'Q2' 
-% %% compute stats for each mutation & chr
-% G=grpstats(T,{'chr_num' 'context' 'alt' 'Subtel'}, 'sum','DataVars','chr_num');
-% G.mut = arrayfun(@(I)sprintf('%s->%s',G.context{I},G.alt{I}),1:height(G),'UniformOutput',false)' ; 
-% G.sum_chr_num = []; 
-% G.FE_p = NaN(height(G),1);
-% G.FE_or = NaN(height(G),1);
-% for I = 1:2:height(G)
-%     st = sum(G.GroupCount( G.Subtel==1 & G.chr_num==G.chr_num(I)));
-%     nonst = sum(G.GroupCount( G.Subtel==0 & G.chr_num==G.chr_num(I)));
-%     [~,p,or] = fishertest( [ nonst st ; G.GroupCount(I) G.GroupCount(I+1)] );
-%    G.FE_p(I) = log10(p);
-%    G.FE_or(I) = or.OddsRatio ;
-% end
-% 
-% 
-% G2 = grpstats( G( ~isnan(G.FE_p) ,:) , {'context' 'alt'},{'median' 'std'},'DataVars',{'FE_p' 'FE_or'});
-% G2 = sortrows(G2,'median_FE_p')
-%% not splitting by chr
-G=grpstats(T,{ 'context' 'ref' 'alt' 'Subtel'}, 'sum','DataVars','chr_num');
-G2=grpstats(T,{'Subtel'}, 'sum','DataVars','chr_num');
+clear 'Q' 'Q2' 'R' 'new_alt' 'prim_alt' ;
+
+
+%% Define under-rep using 200bp windows and interpolation
+T.UnderRep = NaN(height(T),1);
+for I = 1:16
+    idx_ds = DS.chr_num == I ; 
+    idx_t  = T.chr_num == I ; 
+    T.UnderRep(idx_t) = interp1( DS.start_point(idx_ds)+100 , DS.percent_underreplicated_cdc20(idx_ds) , double(T.pos(idx_t))) ;
+end
+
+%% Define Subtelomeric regions as SUBTEL kb from the end
+SUBTEL = 25*1000 ; 
+T.Subtel = zeros(height(T),1);
+T.Subtel( T.pos < SUBTEL) = 1 ; 
+T.Subtel( T.pos > (max(T.pos)-SUBTEL)) = 1 ; 
+
+
+%% Calc enrichment for each mutation in CLASS_FLAG vs non-CLASS_FLAG
+%   compared to all mutations
+T.CLASS_FLAG = T.UnderRep > 0.20 ; % choose under-replicated regions
+X = zeros(height(T),1) ; X( randsample( height(T) , sum(T.CLASS_FLAG))) = 1 ; T.CLASS_FLAG = X ; % choose a random set of mutations
+G=grpstats(T,{ 'context' 'ref' 'alt' 'CLASS_FLAG'}, 'sum','DataVars','chr_num');
+G2=grpstats(T,{'CLASS_FLAG'}, 'sum','DataVars','chr_num');
 
 G.mut = arrayfun(@(I)sprintf('%s->%s',G.context{I},G.alt{I}),1:height(G),'UniformOutput',false)' ; 
 G.sum_chr_num = []; 
@@ -98,7 +75,7 @@ for I = 1:2:height(G)
 end
 G = G( ~isnan(G.FE_p),:);
 %% plot using FDR calculations
-alpha =  0.1 ; 
+alpha =  0.05 ; 
 [G.FDR, G.FDR_Q ] = mafdr(G.FE_p) ;
 G.FDR_Storey =  mafdr( G.FE_p ,'BHFDR',true);
 G.p_Bon = (G.FE_p * height(G)) ;
@@ -111,16 +88,18 @@ uc = unique(G.context);
 uc = uc(o);
 ltrs = 'ACTG';
 fh = figure('units','centimeters','position',[5 5 25 25]); 
-clrs = parula(4);
+clrs = parula(6);
 for I = 1:numel(uc)
     subplot(8,8,I)
     hold on ;
     X = G( strcmp(G.context, uc{I}) & ~isnan(G.FE_p),:) ; 
     p = find(X.sig) ; 
-    bar( 1:3 , X.FE_or ,'FaceColor',(clrs( find(ltrs==uc{I}(2)) , :)).^0.3  );
+    bh1 = bar( 1:3 , X.FE_or ,'FaceColor',(clrs( find(ltrs==uc{I}(2)) , :)).^0.3  );
     if ~isempty(p)
-        bar( p ,  X.FE_or(p) ,'FaceColor',clrs( find(ltrs==uc{I}(2)) , :).^2);
-        X(p,:)
+        X.FE_or(~X.sig) = 0 ;
+        bh2 = bar( 1:3 , X.FE_or  ,'BarWidth',bh1.BarWidth ,'FaceColor',clrs( find(ltrs==uc{I}(2)) , :).^2);
+        X.FE_or(X.FE_or<1) = 0 ;
+        bh3 = bar( 1:3 , X.FE_or  ,'BarWidth',bh1.BarWidth ,'FaceColor',clrs( find(ltrs==uc{I}(2)) , :).^5);
     end
     set(gca,'xtick',1:3)
     set(gca,'xticklabel',X.alt')

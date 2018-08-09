@@ -5,6 +5,7 @@ load([ PROJECTDIR '/Data/DS_stat__features_new.mat'] );
 T = innerjoin( T , dataset2table(DS) , 'LeftKey','Locus','RightKey','ORF') ; 
 clear 'DS' ;
 
+
 %% build predictive model on all the data
 Q = table();
 Q.URA3_10_8 = T.URA3_10_8 ;
@@ -19,6 +20,15 @@ Q.dist_to_the_end_kb_log = zscore(log10(T.dist_to_the_end_kb));
 
 GLM = stepwiseglm( Q , 'linear', 'ResponseVar' ,'URA3_10_8' ) 
 GLM_rep  = fitglm( Q , 'linear', 'ResponseVar' ,'URA3_10_8', 'PredictorVars', {'x_RepTime'} ) ;
+
+%% plot
+figure;
+hold on ;
+plot(Q.URA3_10_8,Q.x_RepTime,'o','DisplayName','RepTiming')
+plot(Q.URA3_10_8,Q.percent_underreplicated_cdc20,'o','DisplayName','CDC20')
+legend('location','best')
+xlabel('URA3 mutation rate')
+ylabel('Rep timing or CDC20 under-rep')
 
 %% cross-val
 mat = NaN(200,4);

@@ -1,6 +1,3 @@
-%% load data
-T = readtable('~/Google Drive File Stream/My Drive/CareyLab/ExternalData/Muller14/coverage.tab','FileType','text','Delimiter','\t');
-T = T( regexpcmp(T.chr,'^chr'),:) ;
 
 %% Origin firing timing from Alvino 2007
 load ~/Develop/Mendoza__ReplicationEvolution/Data/MutantChr200_Michi.mat
@@ -11,6 +8,10 @@ ORI.Tp17_5_ = strcmp(ORI.Tp17_5_,'Y');
 ORI.Tp25_ = strcmp(ORI.Tp25_,'Y');
 ORI.Tp15_ = strcmp(ORI.Tp15_,'Y');
 
+
+%% load data from Muller14
+T = readtable('~/Google Drive File Stream/My Drive/CareyLab/ExternalData/Muller14/coverage.tab','FileType','text','Delimiter','\t');
+T = T( regexpcmp(T.chr,'^chr'),:) ;
 
 % SRR926346' # S
 % SRR926345' # G2
@@ -33,28 +34,38 @@ end
 
 
 %%
-ws = 20 ;
-idx =  strcmp(T.chr,'chrXVI');
-fh = figure('units','centimeters','position',[5 5 35 10]);
-hold on ;
-plot( T.start(idx)./1000 , smooth(T.S(idx),ws),'.' ,'DisplayName','S')
-plot( T.start(idx)./1000 , smooth(T.exponential(idx),ws),'.' ,'DisplayName','exponential')
-plot( T.start(idx)./1000 , smooth(T.stationary(idx),ws),'.' ,'DisplayName','stationary')
-plot( T.start(idx)./1000 , smooth(T.G2(idx),ws),'.' ,'DisplayName','G2')
-legend('location','best')
-axis tight; 
-ylim([0.5 2])
-set(gca,'xtick',0:25:1e5)
-title('chr XVI')
-xlabel('Position along chr (kb)')
-ylabel('Copy Number')
+figname = '~/Downloads/Muller14.eps' ;
+delete(figname);
+for chrI = 1:16
+    figure; 
+    hold on ; 
+    h=gcf;
+    set(h,'PaperOrientation','landscape');
+    set(h,'PaperUnits','normalized');
+    set(h,'PaperPosition', [0 0 1 0.4]);
 
-
-
-X = ORI.Coordinate_kb_(ORI.Tp25_ & ORI.Chromosome==16) ;
-ph = plot( X , 1 ,'sk','MarkerFaceColor',[.7 .7 .7],'MarkerSize',10);
-set(ph,'HandleVisibility','off')
-X = ORI.Coordinate_kb_(ORI.Tp10_ & ORI.Chromosome==16) ;
+    ws = 20 ;
+    chr = ['chr' num2roman(chrI)];
+    idx =  strcmp(T.chr,chr);
+    plot( T.start(idx)./1000 , smooth(T.S(idx),ws),'.' ,'DisplayName','S')
+    plot( T.start(idx)./1000 , smooth(T.exponential(idx),ws),'.' ,'DisplayName','exponential')
+    plot( T.start(idx)./1000 , smooth(T.stationary(idx),ws),'.' ,'DisplayName','stationary')
+    plot( T.start(idx)./1000 , smooth(T.G2(idx),ws),'.' ,'DisplayName','G2')
+    legend('location','best')
+    axis tight;
+    ylim([0.5 2])
+    set(gca,'xtick',0:25:max(xlim))
+    title(chr);
+    xlabel('Position along chr (kb)');
+    ylabel('Copy Number');
+    
+    X = ORI.Coordinate_kb_(ORI.Tp25_ & ORI.Chromosome == chrI) ;
+    ph = plot( X , 1 ,'sk','MarkerFaceColor',[.7 .7 .7],'MarkerSize',10);
+    set(ph,'HandleVisibility','off')
+    X = ORI.Coordinate_kb_(ORI.Tp10_ & ORI.Chromosome == chrI) ;
+    print('-dpsc2',figname,'-append');
+    close;
+end
 %ph = plot( X , 1 ,'ok','MarkerFaceColor','b') ; 
 %set(ph,'HandleVisibility','off')
 

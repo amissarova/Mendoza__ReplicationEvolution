@@ -3,11 +3,28 @@
 %   all.tab has all mutational positions
 DATADIR = '~/Data/Peter18/' ;
 %T = readtable([ DATADIR 'nocomma.tab' ] ,'FileType','text','Delimiter','\t','Format','%d%d%s%s');
-T = readtable([ '~/Downloads/' 'all.tab' ] ,'FileType','text','Delimiter','\t','Format','%d%d%s%s');
+T = readtable([ DATADIR 'all.tab' ] ,'FileType','text','Delimiter','\t','Format','%d%d%s%s');
 T.Properties.VariableNames = {'chr_num' 'pos' 'ref' 'alt'};
 
 YG = fastaread('~/Data/Yeast/genome.fasta');
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__200bp_new.mat');
+
+%% Define under-rep using 200bp windows and interpolation
+T.UnderRep = NaN(height(T),1);
+for I = 1:16
+    idx_ds = DS.chr_num == I ; 
+    idx_t  = T.chr_num == I ; 
+    T.UnderRep(idx_t) = interp1( DS.start_point(idx_ds)+100 , DS.percent_underreplicated_cdc20(idx_ds) , double(T.pos(idx_t))) ;
+end
+T.UnderRep =  T.UnderRep * 100 ; %convert to percent
+
+
+
+%% Define Subtelomeric regions as SUBTEL kb from the end
+SUBTEL = 25*1000 ; 
+T.Subtel = zeros(height(T),1);
+T.Subtel( T.pos < SUBTEL) = 1 ; 
+T.Subtel( T.pos > (max(T.pos)-SUBTEL)) = 1 ; 
 
 %% keep only SNPs
 % T = T( cellfun(@length,T.alt)==1 , :); % removes SNPs w/multiple alt  alleles
@@ -42,25 +59,11 @@ T = Q2;
 clear 'Q' 'Q2' 'R' 'new_alt' 'prim_alt' ;
 
 
-%% Define under-rep using 200bp windows and interpolation
-T.UnderRep = NaN(height(T),1);
-for I = 1:16
-    idx_ds = DS.chr_num == I ; 
-    idx_t  = T.chr_num == I ; 
-    T.UnderRep(idx_t) = interp1( DS.start_point(idx_ds)+100 , DS.percent_underreplicated_cdc20(idx_ds) , double(T.pos(idx_t))) ;
-end
-
-%% Define Subtelomeric regions as SUBTEL kb from the end
-SUBTEL = 25*1000 ; 
-T.Subtel = zeros(height(T),1);
-T.Subtel( T.pos < SUBTEL) = 1 ; 
-T.Subtel( T.pos > (max(T.pos)-SUBTEL)) = 1 ; 
-
 
 %% Calc enrichment for each mutation in CLASS_FLAG vs non-CLASS_FLAG
 %   compared to all mutations
-T.CLASS_FLAG = T.UnderRep > 0.20 ; % choose under-replicated regions
-X = zeros(height(T),1) ; X( randsample( height(T) , sum(T.CLASS_FLAG))) = 1 ; T.CLASS_FLAG = X ; % choose a random set of mutations
+T.CLASS_FLAG = T.UnderRep > 20 ; % choose under-replicated regions
+%  X = zeros(height(T),1) ; X( randsample( height(T) , sum(T.CLASS_FLAG))) = 1 ; T.CLASS_FLAG = X ; % FOR TESTING.  choose a random set of mutations
 G=grpstats(T,{ 'context' 'ref' 'alt' 'CLASS_FLAG'}, 'sum','DataVars','chr_num');
 G2=grpstats(T,{'CLASS_FLAG'}, 'sum','DataVars','chr_num');
 
@@ -119,3 +122,28 @@ for I = 1:numel(uc)
 end
     
 
+%% indel freqs remove w/multiple alt alleles
+T = T( ~regexpcmp(T.alt,',') ,:);
+%%
+reflen = cellfun( @length , T.ref); 
+altlen = cellfun( @length , T.alt);
+idx = reflen ~= altlen ; 
+idx_UNDERREP = T.UnderRep > 20 ; 
+X = reflen - altlen ; 
+X(X<-10) = -10 ;
+X(X>10) = 10 ;
+figure; 
+hold on ;
+X_notunder = X(idx & ~idx_UNDERREP) ; 
+X_under    = X(idx & idx_UNDERREP);
+histogram( X_notunder, -11.5:11 ,'Normalization','Probability')
+histogram( X_under , -11.5:11  ,'Normalization','Probability')
+legend({'Not under-rep' 'Under-replicated'} , 'location','nw');
+xlabel('Deletion          (RefLength - AltLength)    Insertion')
+ylabel('% of Indels')
+set(gca,'xtick',[-10 -5 -4 -3 -2 -1 1 2 3 4 5 10])
+
+%%
+[~,p , or ] = fishertest( [ sum(X_notunder>0)  sum(X_notunder<0)  ; sum(X_under>0)  sum(X_under<0)  ] )
+[~,p , or ] = fishertest( [ sum(X_notunder==1)  sum(X_notunder~=1)  ; sum(X_under==1)  sum(X_under~=1)  ] )
+[~,p , or ] = fishertest( [ sum(X_notunder==-1)  sum(X_notunder~=-1)  ; sum(X_under==-1)  sum(X_under~=-1)  ] )

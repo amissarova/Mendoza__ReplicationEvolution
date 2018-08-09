@@ -35,7 +35,9 @@ end
 
 % confirm alternating nuc/bck by area
 %     some HUGE nuclei & backgrounds. WTF!? 
-figure; hold on ;ecdf( Q.Area(1:2:end));ecdf( Q.Area(2:2:end));xlim([0 15]);legend({'Nuc' 'bckgrnd'},'location','best'); title(' look into this!');xlabel('ROI area (?units?)')
+fh = figure('units','centimeters','position',[5 5 10 10]);
+hold on ;ecdf( Q.Area(1:2:end));ecdf( Q.Area(2:2:end));ecdf( T.Area(strcmp(T.CellPart,'cell')));
+xlim([0 15]);legend({'Nuc' 'bckgrnd' 'cell'},'location','best'); title(' look into this!');xlabel('ROI area (?units?)')
 
 
 EdUsig  =  Q.Mean(1:2:end)  - Q.Mean(2:2:end) ;

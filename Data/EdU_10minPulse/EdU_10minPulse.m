@@ -1,9 +1,9 @@
 %% Script to load data and make figures from the 10min EdU pulse 
 %   from cells grown 30min prior in alpha-factor
 DATADIR = '~/Develop/Mendoza__ReplicationEvolution/Data/EdU_10minPulse/';
-%% load data
+% load data
 T = readtable([ DATADIR 'stat_EdU_aF_20180802_slide2.txt' ] );
-
+T = T( ~isnan(T.Area) , :);
 % propagage mother/daughter, stage, Cell#, and anything else that is only
 % recorded for the first row of each cell
 for I = 1:height(T)
@@ -19,99 +19,144 @@ for I = 1:height(T)
         T.mtDNARepObserved(I) = mtDNARepObs ; 
     end
 end
+T.Stage = categorical(T.Stage); 
+T.CellPart = categorical(T.CellPart); 
+T.Fluor = categorical(T.Fluor); 
 
-%% boxplots
+T = T( T.Fluor=='EdU',:);
+
+%% boxplots -- build dataset & set arbitrary parameters
 
 % only take rows of interest
-Q = T( strcmp(T.Fluor,'EdU') & ~strcmp(T.CellPart,'cell'),:);
-%Q = Q( ~strcmp(Q.Mother_daughter,'1') , :);
-for I = 1:height(Q)
-    if regexpcmp(Q.Label{I},'MAX_Control')
-        Q.Stage{I} = 'no EdU' ;
+T = T( (T.Fluor=='EdU' & T.CellPart ~= 'cell' ),:);
+for I = 1:height(T)
+    if regexpcmp(T.Label{I},'MAX_Control')
+        T.Stage(I) = 'no edu' ;
     end
 end
 
-% alternating rows have signal & background (not a very robust way to do this analysis. 
 
-% confirm alternating nuc/bck by area
-%     some HUGE nuclei & backgrounds. WTF!? 
-fh = figure('units','centimeters','position',[5 5 10 10]);
-hold on ;ecdf( Q.Area(1:2:end));ecdf( Q.Area(2:2:end));ecdf( T.Area(strcmp(T.CellPart,'cell')));
-xlim([0 15]);legend({'Nuc' 'bckgrnd' 'cell'},'location','best'); title(' look into this!');xlabel('ROI area (?units?)')
+idx_nuc = T.CellPart == 'nuclei'   ;
+idx_bck = T.CellPart =='cytoplasm' ;
 
+R = table();
+R.EdU_Nuc  =  T.Mean(idx_nuc) ;
+R.EdU_Background =  T.Mean(idx_bck) ;
 
-EdUsig  =  Q.Mean(1:2:end)  - Q.Mean(2:2:end) ;
-Stages = Q.Stage(1:2:end);
-MD = Q.Mother_daughter(1:2:end);
-EDU = arrayfun(@(X){'+EdU'},1:numel(MD))' ; 
-EDU(regexpcmp(Q.Label(1:2:end),'MAX_Control')) = {'no edu'};
-mtREP = arrayfun(@(X)num2str(X),Q.mtDNARepObserved(1:2:end),'UniformOutput',false) ; 
+R.EdUsig_diff  =  R.EdU_Nuc - R.EdU_Background ; 
+R.EdUsig_ratio = R.EdU_Nuc ./ R.EdU_Background ; 
+R.EdUsig = R.EdUsig_ratio ; 
 
-%EdUsig(EdUsig<=0) = 0.1 ;
-EdUsig(EdUsig>40) = 40 ;
-%groups_cat = strcat(Stages,',',MD) ; 
-groups_cat = strcat(Stages) ; 
-%groups_cat = strcat(Stages  , ',' , EDU ) ; 
-%groups_cat = strcat(EDU ,' ' , Stages   ) ; 
+R.Stage  =  T.Stage(idx_nuc);
+R.MD      =  T.Mother_daughter(idx_nuc);
+R.CellNum =  T.CellNum(idx_nuc);
 
-unique_groups = unique(groups_cat) ; 
-fh = figure('units','centimeters','position',[5 5 20 10]);
+R.EDU_FLAG=  regexpcmp(T.Label(idx_nuc),'MAX_Control');
+R.Stage( R.EDU_FLAG )  = {'no edu'} ; 
+
+MAXCUTOFF = prctile(R.EdUsig , 98) ; 
+MINCUTOFF = 1 ; 
+
+THRESH = prctile( R.EdUsig(R.EDU_FLAG) , 100 );
+
+unique_groups = {'eG1' 'G1' 'S' 'M' 'A' 'T'  'no edu'};
+
+%% make plot
+fh = figure('units','centimeters','position',[5 5 25 10]);
 hold on ;
 
 clrs = get(gca,'ColorOrder');
-%clrs = repmat( clrs(1:2,:) , 5 , 1);
 clrs = parula(numel(unique_groups));
 
-%bh = boxplot( EdUsig , groups_cat ,'GroupOrder',unique_groups ,'Symbol','' ); 
-bh = boxplot( EdUsig , groups_cat, 'ColorGroup',clrs  ,'GroupOrder',unique_groups ,'Symbol','' ); 
+bh = boxplot( R.EdUsig , R.Stage  , 'ColorGroup',clrs  ,'GroupOrder',unique_groups ,'Symbol','' ); 
 
-[~,p] = ttest2( EdUsig( strcmp(Stages,'A') ) , EdUsig(  strcmp(Stages,'G1'))) ; 
-%[~,p] = fishertest( [ sum(EdUsig( strcmp(Stages,'G1') )>15) sum(EdUsig( strcmp(Stages,'G1'))< 15) ; ...
-%    sum(EdUsig( strcmp(Stages,'T') )>15) sum(EdUsig( strcmp(Stages,'T') )<15) ])
-
-set(gca,'yscale','lin')
 ylabel('EdU (nuclear - bckgrnd)')
-title('Mean EdU signal Alsu stat_EdU_WT_20170731_1')
 
-THRESH = max(EdUsig(strcmp(EDU,'no edu'))) ;
 
 for I = 1:numel(unique_groups)
-    data = EdUsig( strcmp(groups_cat,unique_groups{I}));
-    x = get(bh(1,I),'XData'); x = x(1);
-    txt = sprintf('%0.0f%% (%d/%d)' , ( sum(data>THRESH) / numel(data))*100 , sum(data>THRESH) , numel(data));
-    text( x-0.25 , 45 , txt);
-    [~,p] = fishertest( [ sum(data>THRESH)  sum(data<=THRESH) ; 0 sum(regexpcmp(Q.Label(1:2:end),'MAX_Control'))] ) ;
-    text( x-0.25 , 42 , sprintf('p=%0.03f' , p) );
-    plot( random('normal',x,0.05,size(data)) , data ,'ok');
-    
-end
+    data = R.EdUsig( R.Stage == unique_groups{I} );
+    dataMAXCUTOFF = data; dataMAXCUTOFF(data>MAXCUTOFF) = MAXCUTOFF ; 
+    dataMAXCUTOFF(data<MINCUTOFF) = MINCUTOFF ; 
 
-line( xlim , [THRESH THRESH], 'LineStyle','--')
-%% %% %% ecdfs %% %%
-% %% ecdfs 
-% fh = figure('units','centimeters','position',[5 5 10 10]);hold on ;
-% us = unique(Stages);
-% us = {'eG1' 'G1' 'M' 'A' 'T'};
-% clrs = get(gca,'ColorOrder');
-% for I = 1:numel(us)
-%     mother_data = ( EdUsig( strcmp(MD,'M') & strcmp(Stages,us{I})));
-%     daughter_data = ( EdUsig( strcmp(MD,'D') & strcmp(Stages,us{I})));
-%    [f,x] = ecdf(  ( vertcat(mother_data,daughter_data) ) );
-%    plot(x,f*100,'s-','LineWidth',3,'DisplayName',us{I});
-% %     [f,x] = ecdf( log10(  mother_data  ) );
-% %     plot(x,f*100,'s-','LineWidth',3,'Color',clrs(I,:),'DisplayName',sprintf('M %s' , us{I}));
-% %     if ~isempty(daughter_data)
-% %     [f,x] = ecdf( log10( daughter_data) ) ;
-% %     plot(x,f*100,'o-.','LineWidth',3,'Color',clrs(I,:),'DisplayName',sprintf('D %s' , us{I}));
-% %     [~,p] = ttest2(  log10(  mother_data  ) , log10( daughter_data));
-% %     fprintf('%s M vs D p=%0.04f\n' , us{I} , p );
-% %    end
+    x = get(bh(1,I),'XData'); x = x(1);    
+    sh = scatter( random('uniform',x-0.2,x+0.2,size(data)) , dataMAXCUTOFF ,10,'k','MarkerFaceColor', get(bh(5,I),'Color') );
+
+    txt = sprintf('%0.0f%% (%d/%d)' , ( sum(data>THRESH) / numel(data))*100 , sum(data>THRESH) , numel(data));
+    text( x-0.25 , MAXCUTOFF+0.2 , txt);
+ 
+     [~,p] =  fishertest( [ sum(data>THRESH)  sum(data<=THRESH) ; sum(R.EdUsig(R.EDU_FLAG)>THRESH) sum(R.EdUsig(R.EDU_FLAG)<=THRESH) ] ) ;
+%     p = (numel(unique_groups)-1) * p ; 
+%     if p<0.1
+%         text( x-0.25 , MAXCUTOFF*0.8  , sprintf('F.E. p=%0.02f' , p) );
+%     end
+%     
+     [~,pT] = ttest2( data , R.EdUsig(R.EDU_FLAG) ) ;
+%     pT = (numel(unique_groups)-1) * pT ; 
+%     if pT<0.1
+%         text( x-0.25 , MAXCUTOFF*0.7 , sprintf('T_{test}   p=%0.02f' , pT ) );
+%     end
+    fprintf('%s\tFE=%0.02f\tTt=%0.02f\n' , unique_groups{I} , p , pT);
+end
+fprintf('\n');
+
+line( xlim , [THRESH THRESH], 'LineStyle','--','Color',[.7 .7 .7])
+ylim([MINCUTOFF  MAXCUTOFF+0.3])
+
+%%
+fh = figure('units','centimeters','position',[5 5 10 10]);
+gh = gscatter( R.EdU_Background,R.EdU_Nuc , R.Stage , parula(numel(unique_groups)) , '...+..s')
+xlabel('EdU Background')
+ylabel('EdU Nuclear')
+lh = line([10 80],[10 80],'LineStyle','-','Color','k');
+set(lh,'HandleVisibility','off');
+lh = line([10 80],[30 100],'LineStyle','--','Color','k');
+set(lh,'HandleVisibility','off');
+%set(gca,'ytick',0:5:40)
+%%
+% figure; 
+% [p,t,stats] = anova1(  R.EdUsig , R.Stage , 'off');
+% [c,m,h,nms] = multcompare(stats,'Display','on');
+
 % 
+% %% taking mean of nuclei for cells that haven't yet finished cytokin
+% idx = strcmp(R.Stages,'A')  | strcmp(R.Stages,'T') ;
+% G = grpstats( R(idx,:) , {'CellNum' 'Stages' 'EDU_FLAG'} , {'mean'} , 'DataVars' ,'EdUsig');
+% G.GroupCount = [] ;
+% G.Properties.VariableNames = {'CellNum' 'Stages' 'EDU_FLAG' 'EdUsig'}; 
+% G.Properties.RowNames = {} ; 
+% G = vertcat(G,R(~idx,G.Properties.VariableNames)); 
+% 
+% fh = figure('units','centimeters','position',[5 5 25 10]);
+% hold on ;
+% bh = boxplot( G.EdUsig , G.Stages , 'ColorGroup',clrs  ,'GroupOrder',unique_groups ,'Symbol','' ); 
+% 
+% ylabel('EdU (nuclear - bckgrnd)')
+% 
+% for I = 1:numel(unique_groups)
+%     data = G.EdUsig( strcmp(G.Stages,unique_groups{I}));
+%     dataMAXCUTOFF = data; dataMAXCUTOFF(data>MAXCUTOFF) = MAXCUTOFF ; 
+%     x = get(bh(1,I),'XData'); x = x(1);
+%     txt = sprintf('%0.0f%% (%d/%d)' , ( sum(data>THRESH) / numel(data))*100 , sum(data>THRESH) , numel(data));
+%     text( x-0.25 , 44 , txt);
+%     [~,p] = fishertest( [ sum(data>THRESH)  sum(data<=THRESH) ; sum(R.EdUsig(R.EDU_FLAG)>THRESH) sum(R.EdUsig(R.EDU_FLAG)<=THRESH) ] ) ;
+%     p = (numel(unique_groups)-1) * p ; 
+%     sh = scatter( random('normal',x,0.05,size(data)) , dataMAXCUTOFF ,10,'k','MarkerFaceColor', get(bh(5,I),'Color') );
+% 
+%     if p<0.1
+%         text( x-0.25 , 42 , sprintf('F.E. p=%0.02f' ,p));
+%     end
+%     [~,p] = ttest2( data , R.EdUsig(R.EDU_FLAG) ) ;
+%     p = (numel(unique_groups)-1) * p ; 
+%     if p<0.1
+%         text( x-0.25 , 39.5 , sprintf('T_{test}   p=%0.02f' , p) );
+%     end
+%     
 % end
 % 
-% xlabel('log10( EdU (mean intensity, nuc - bckgrnd) )')
-% ylabel('% of cells')
-% axis tight; 
-% legend('location','nw')
-% title('Mean')
-% %set(gca,'xtick',log10([.05 .1 .2 .5 1 2 5 10 20 50 100 200]))
+% line( xlim , [THRESH THRESH], 'LineStyle','--','Color',[.7 .7 .7])
+% ylim([0 49.5])
+% set(gca,'ytick',0:5:40)
+% title('join nuclei by mean')
+% % figure; 
+% % [p,t,stats] = anova1(  G.EdUsig , G.Stages , 'off');
+% % [c,m,h,nms] = multcompare(stats,'Display','on');

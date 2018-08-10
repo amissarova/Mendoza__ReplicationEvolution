@@ -2,7 +2,7 @@
 %   from cells grown 30min prior in alpha-factor
 DATADIR = '~/Develop/Mendoza__ReplicationEvolution/Data/EdU_10minPulse/';
 % load data
-T = readtable([ DATADIR 'stat_EdU_aF_20180802_slide2.txt' ] );
+T = readtable([ DATADIR 'stat_EdU_aF_1.txt' ] );
 T = T( ~isnan(T.Area) , :);
 % propagage mother/daughter, stage, Cell#, and anything else that is only
 % recorded for the first row of each cell
@@ -42,10 +42,14 @@ idx_bck = T.CellPart =='cytoplasm' ;
 R = table();
 R.EdU_Nuc  =  T.Mean(idx_nuc) ;
 R.EdU_Background =  T.Mean(idx_bck) ;
+R.EdU_NucMax = T.Max(idx_nuc);
+R.EdU_BckMax = T.Max(idx_bck);
+R.EdU_NucMedian = T.Median(idx_nuc);
+R.EdU_BckMedian = T.Median(idx_bck);
 
 R.EdUsig_diff  =  R.EdU_Nuc - R.EdU_Background ; 
 R.EdUsig_ratio = R.EdU_Nuc ./ R.EdU_Background ; 
-R.EdUsig = R.EdUsig_ratio ; 
+R.EdUsig = R.EdUsig_diff   ; 
 
 R.Stage  =  T.Stage(idx_nuc);
 R.MD      =  T.Mother_daughter(idx_nuc);
@@ -57,7 +61,7 @@ R.Stage( R.EDU_FLAG )  = {'no edu'} ;
 MAXCUTOFF = prctile(R.EdUsig , 98) ; 
 MINCUTOFF = 1 ; 
 
-THRESH = prctile( R.EdUsig(R.EDU_FLAG) , 100 );
+THRESH = prctile( R.EdUsig(R.EDU_FLAG) , 100 ); % for drawing line and for FE test
 
 unique_groups = {'eG1' 'G1' 'S' 'M' 'A' 'T'  'no edu'};
 
@@ -68,9 +72,9 @@ hold on ;
 clrs = get(gca,'ColorOrder');
 clrs = parula(numel(unique_groups));
 
-bh = boxplot( R.EdUsig , R.Stage  , 'ColorGroup',clrs  ,'GroupOrder',unique_groups ,'Symbol','' ); 
+bh = boxplot( R.EdUsig , R.Stage  , 'ColorGroup',clrs  ,'GroupOrder',unique_groups ,'Symbol','' ,'notch','on'); 
 
-ylabel('EdU (nuclear - bckgrnd)')
+ylabel('EdU (nuclear / bckgrnd)')
 
 
 for I = 1:numel(unique_groups)
@@ -85,17 +89,17 @@ for I = 1:numel(unique_groups)
     text( x-0.25 , MAXCUTOFF+0.2 , txt);
  
      [~,p] =  fishertest( [ sum(data>THRESH)  sum(data<=THRESH) ; sum(R.EdUsig(R.EDU_FLAG)>THRESH) sum(R.EdUsig(R.EDU_FLAG)<=THRESH) ] ) ;
-%     p = (numel(unique_groups)-1) * p ; 
+     p = (numel(unique_groups)-1) * p ; 
 %     if p<0.1
 %         text( x-0.25 , MAXCUTOFF*0.8  , sprintf('F.E. p=%0.02f' , p) );
 %     end
 %     
      [~,pT] = ttest2( data , R.EdUsig(R.EDU_FLAG) ) ;
-%     pT = (numel(unique_groups)-1) * pT ; 
+     pT = (numel(unique_groups)-1) * pT ; 
 %     if pT<0.1
 %         text( x-0.25 , MAXCUTOFF*0.7 , sprintf('T_{test}   p=%0.02f' , pT ) );
 %     end
-    fprintf('%s\tFE=%0.02f\tTt=%0.02f\n' , unique_groups{I} , p , pT);
+    fprintf('%s\tFE=%0.03f\tTt=%0.03f\n' , unique_groups{I} , p , pT);
 end
 fprintf('\n');
 
@@ -112,6 +116,36 @@ set(lh,'HandleVisibility','off');
 lh = line([10 80],[30 100],'LineStyle','--','Color','k');
 set(lh,'HandleVisibility','off');
 %set(gca,'ytick',0:5:40)
+
+%%
+grps = {'G1' 'S' 'M' 'A' 'T' 'eG1'};
+
+Y = NaN(numel(grps),2);
+for I = 1:numel(grps)
+    data = R.EdUsig( R.Stage == grps{I});
+    medians = bootstrp( 1e3 , @median , data);
+    means = bootstrp( 1e3 , @mean , data);
+    Y( I , 1 ) = median(data);
+    Y( I , 2 ) = std(medians) ;
+    
+    Y( I , 1 ) = mean(data);
+    Y( I , 2 ) = std(means) ;    
+end
+fh = figure('units','centimeters','position',[5 5 10 15]);
+clrs = get(gca,'ColorOrder');
+hold on ;
+errorbar( 0:numel(grps)+1 , [Y(end,1) Y(:,1)' Y(end,1)], [ Y(end,2) Y(:,2)' Y(end,2)]  ,'o-k','MarkerFaceColor','k','LineWidth',3,'DisplayName','data')
+plot( 0:numel(grps)+1 ,  [ Y(4,1) Y(4,1) Y(2,1) Y(3,1) Y(4,1) Y(4,1) Y(4,1)  Y(4,1)] , 's-','Color',[.7 .7 .7],'DisplayName','expectation','LineWidth',2)
+set(gca,'xtick',1:numel(grps))
+set(gca,'xticklabel',grps)
+ylim([6 60])
+ylabel('EdU signal (nuclear - background)')
+xlabel('cell cycle stage')
+legend('location','ne')
+xlim([0.5 6.5])
+
+
+
 %%
 % figure; 
 % [p,t,stats] = anova1(  R.EdUsig , R.Stage , 'off');

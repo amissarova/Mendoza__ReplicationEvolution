@@ -123,19 +123,22 @@ grps = {'G1' 'S' 'M' 'A' 'T' 'eG1'};
 Y = NaN(numel(grps),2);
 for I = 1:numel(grps)
     data = R.EdUsig( R.Stage == grps{I});
-    medians = bootstrp( 1e3 , @median , data);
-    means = bootstrp( 1e3 , @mean , data);
+    medians = bootstrp( 1e4 , @median , data);
+    means = bootstrp( 1e4 , @mean , data);
     Y( I , 1 ) = median(data);
     Y( I , 2 ) = std(medians) ;
     
     Y( I , 1 ) = mean(data);
-    Y( I , 2 ) = std(means) ;    
+    Y( I , 2 ) = prctile(means,95)-mean(data) ;    
 end
 fh = figure('units','centimeters','position',[5 5 10 15]);
 clrs = get(gca,'ColorOrder');
 hold on ;
+
+errorbar( 0:numel(grps)+1 ,  repmat( mean(control_data),1,8) , repmat(std(means),1,8) , 'LineStyle','-','DisplayName','no EdU control','LineWidth',2)
+
 errorbar( 0:numel(grps)+1 , [Y(end,1) Y(:,1)' Y(end,1)], [ Y(end,2) Y(:,2)' Y(end,2)]  ,'o-k','MarkerFaceColor','k','LineWidth',3,'DisplayName','data')
-plot( 0:numel(grps)+1 ,  [ Y(4,1) Y(4,1) Y(2,1) Y(3,1) Y(4,1) Y(4,1) Y(4,1)  Y(4,1)] , 's-','Color',[.7 .7 .7],'DisplayName','expectation','LineWidth',2)
+plot( 0:numel(grps)+1 ,  [ Y(4,1) Y(4,1) Y(2,1) Y(4,1) Y(4,1) Y(4,1) Y(4,1)  Y(4,1)] , 's-','Color',[.7 .7 .7],'DisplayName','expectation (cartoon)','LineWidth',2)
 set(gca,'xtick',1:numel(grps))
 set(gca,'xticklabel',grps)
 ylim([6 60])
@@ -144,7 +147,8 @@ xlabel('cell cycle stage')
 legend('location','ne')
 xlim([0.5 6.5])
 
-
+control_data = R.EdUsig( R.Stage=='no edu') ; 
+means = bootstrp( 1e4 , @mean , control_data);
 
 %%
 % figure; 

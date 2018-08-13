@@ -2,7 +2,7 @@
 %   from cells grown 30min prior in alpha-factor
 DATADIR = '~/Develop/Mendoza__ReplicationEvolution/Data/EdU_10minPulse/';
 % load data
-T = readtable([ DATADIR 'stat_EdU_aF_1.txt' ] );
+T = readtable([ DATADIR 'stat_EdU_aF_2.txt' ] );
 T = T( ~isnan(T.Area) , :);
 % propagage mother/daughter, stage, Cell#, and anything else that is only
 % recorded for the first row of each cell
@@ -63,7 +63,7 @@ MINCUTOFF = 1 ;
 
 THRESH = prctile( R.EdUsig(R.EDU_FLAG) , 100 ); % for drawing line and for FE test
 
-unique_groups = {'eG1' 'G1' 'S' 'M' 'A' 'T'  'no edu'};
+unique_groups = {'eG1' 'G1' 'S' 'M' 'A' 'T' };
 
 %% make plot
 fh = figure('units','centimeters','position',[5 5 25 10]);

@@ -35,7 +35,7 @@ xlim([0 K]); ylim([-9 60]);
 set(gca , 'Xtick' , [0 25 50 75] , 'Ytick' , [0 20 40 60]);
 title(strcat ( DS.chr{idx(1)} , ', left'));
 xlabel('Distance to the end, kbp'); ylabel('% unreplicated cells');
-%print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2A' , '-r300');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2A' , '-r600');
 
 
 %% Fig 2C: scatter, all data, dist to the end VS under-rep with highlughting particularly underreplicated
@@ -51,8 +51,8 @@ idx = find(DS.percent_underreplicated_cdc20*100 > thresh_underrep);
 h2 = scatter(DS.dist_to_the_end_kb(idx) , DS.percent_underreplicated_cdc20(idx)*100 , ...
     20 , clrs(9,:) , 'filled' , 'MarkerFaceAlpha',.4 , 'Display' , 'all 200-bp windows');
 ylim([-9 60]);
-legend('whole genome' , 'Under-replicated' , 'location' , 'nw');
-%print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/20170531/2B_scatter' , '-r300');
+legend('Whole genome' , 'Under-replicated' , 'location' , 'nw');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2B_scatter' , '-r600');
 
 %% Optional Fig 2C-scatter for DBF2
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__200bp_new.mat');
@@ -91,7 +91,7 @@ for I = 1:length(x)
 end
 plot(x , y/sum(y) , 'LineWidth' , 2.5 , 'color' , [.25 .25 .25]);      
 xlim([-20 60]);        
-%print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/20170531/2B_hist' , '-r300');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2B_hist' , '-r600');
 
 %% Fig 2D: G4, transposons, fragile sites against all the data points
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__200bp_new.mat');

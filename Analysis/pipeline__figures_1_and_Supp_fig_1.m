@@ -286,7 +286,7 @@ for I = 1:N
     end
     
     save_name = sprintf('1c__eCDFs__ND__main__subpanel_%d' , I);
-    print('-dpng' , strcat('~/Develop/Mendoza__ReplicationEvolution/Figures/fig1/', save_name ) , '-r300');
+    print('-dpng' , strcat('~/Develop/Mendoza__ReplicationEvolution/Figures/fig1/', save_name ) , '-r600');
 end
 
 %
@@ -311,7 +311,7 @@ for I = 1:3
         ylim([0 75]);
     end
     save_name = sprintf('1c__boxplots__ChrBridge__main__subpanel_%d' , I);
-    print('-dpng' , strcat('~/Develop/Mendoza__ReplicationEvolution/Figures/fig1/', save_name ) , '-r300');
+    print('-dpng' , strcat('~/Develop/Mendoza__ReplicationEvolution/Figures/fig1/', save_name ) , '-r600');
 end
 
 %% Supp fig

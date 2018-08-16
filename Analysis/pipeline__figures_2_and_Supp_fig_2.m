@@ -128,6 +128,39 @@ set(gca , 'Xtick' , '');
 %ylabel('Under-replication, %');
 %print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/20170531/2C' , '-r300');
 
+%% Fig 2D like but for tRNAs
+load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__200bp_new.mat');
+data = NaN(length(DS) , 3);
+%
+data(:,1) = DS.percent_underreplicated_cdc20*100;
+
+%
+load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__features_new.mat');
+idx = find(strcmp(DS.TYPE , 'tRNA'));
+data(1:length(idx) , 2) = DS.percent_underreplicated_cdc20(idx)*100;
+
+idx = find(strcmp(DS.TYPE , 'tRNA'));
+data(1:length(idx) , 3) = DS.percent_underreplicated_cdc20(idx)*100;
+
+clrs1 = summer(12); clrs2 = hot(12); clrs3 = parula(12); clrs4 = lines(6); clrs5 = spring(12);
+clrs_set = [.65 .65 .65 ; clrs1(3,:) ; clrs2(3,:) ; clrs3(5,:) ; ...
+    clrs4(4,:) ; clrs3(10,:) ; clrs3(3,:) ; clrs5(3,:)];
+legend_titles = {'whole genome' ,'tRNAs' , 'all ORFs'};
+figure('units','centimeters','position',[5 5 8 10]); hold on; grid on; set(gca , 'FontSize' , 10);
+h1 = boxplot(data , 'color' , [.2 .2 .2] , 'symbol' , '');
+set(h1 , 'LineWidth' , 1.5);
+h = findobj(gca,'Tag','Box'); 
+N = length(h);
+for j=1:N
+    patch(get(h(N-j+1),'XData'),get(h(N-j+1),'YData'), clrs_set(j,:) ,'FaceAlpha',.5 , 'Display' , legend_titles{j});
+end
+legend('location' , 'SouthOutside');
+ylim([-12 20]);
+set(gca , 'Xtick' , '');
+%ylabel('Under-replication, %');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/tRNA' , '-r300');
+
+
 %% Fig 2E: underrep VS dist to the end for gene ontologies 
 thresh_nderrep = 21.0745;
 load('~/Develop/Mendoza__ReplicationEvolution/Data/YeastGOwUnderrep.mat');
@@ -263,11 +296,12 @@ set(gca , 'Xtick' , []);
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__features_new.mat');
 idx = find(strcmp(DS.TYPE , 'ORF')); D = DS(idx , :);
 D = D(: , {'ORF' , 'dist_to_the_end_kb' , 'percent_underreplicated_cdc20' , ...
-    'percent_underreplicated_Tsveti_M' , 'percent_underreplicated_dbf2' , 'Phenotype_Observable'});
+    'percent_underreplicated_dbf2' , 'Phenotype_Observable' , 'Essentiality'});
 T = dataset('file' , '~/Develop/Mendoza__ReplicationEvolution/Data/ExternalData/Baryshnikova10.tab');
 T = T(: , {'ORF' , 'fitness'}); T = unique(T);
 D = join(D , T , 'Type' , 'left' , 'Keys' , 'ORF' , 'MergeKeys' , true);
-idx = find(strcmp(D.Phenotype_Observable , 'Inviable'));
+%idx = find(strcmp(D.Phenotype_Observable , 'Inviable'));
+idx = find(D.Essentiality == 1);
 for I = 1:length(idx)
     D.fitness(idx(I)) = 0;
 end
@@ -284,7 +318,7 @@ ylabel('Relative to WT fitness');
 D = sortrows(D , 'percent_underreplicated_cdc20');  
 R = corrcoef(D.percent_underreplicated_cdc20*100 , D.fitness); 
 title(sprintf('R = %.1f.' , R(1,2)));
-%print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2H_dscatter' , '-r300');
+print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/2H_dscatter_underrep_fitness' , '-r600');
 
 %%
 % ---Supplementary figures for fig 2 below

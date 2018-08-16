@@ -134,7 +134,7 @@ end
 fh = figure('units','centimeters','position',[5 5 10 15]);
 clrs = get(gca,'ColorOrder');
 hold on ;
-
+control_data = R.EdUsig( R.Stage=='no edu') ; 
 errorbar( 0:numel(grps)+1 ,  repmat( mean(control_data),1,8) , repmat(std(means),1,8) , 'LineStyle','-','DisplayName','no EdU control','LineWidth',2)
 
 errorbar( 0:numel(grps)+1 , [Y(end,1) Y(:,1)' Y(end,1)], [ Y(end,2) Y(:,2)' Y(end,2)]  ,'o-k','MarkerFaceColor','k','LineWidth',3,'DisplayName','data')
@@ -147,7 +147,6 @@ xlabel('cell cycle stage')
 legend('location','ne')
 xlim([0.5 6.5])
 
-control_data = R.EdUsig( R.Stage=='no edu') ; 
 means = bootstrp( 1e4 , @mean , control_data);
 
 %%

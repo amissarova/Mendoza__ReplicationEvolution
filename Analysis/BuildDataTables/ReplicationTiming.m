@@ -21,18 +21,33 @@ M.chr_num = cellfun( @(X) roman2num(regexprep(X,'chr','')) , M.chr);
 M = M( ~isnan(M.chr_num),:);
 
 %% Muller14 normalization
-G = grpstats( M ,'chr_num',{@modefit @sum @mean},'DataVars',{'Muller14_exponential' 'Muller14_stationary' 'Muller14_G2' 'Muller14_S'});
-M.Muller14_exponential_norm = NaN(height(M),1);
-M.Muller14_stationary_norm =  NaN(height(M),1);
-M.Muller14_G2_norm =  NaN(height(M),1);
-M.Muller14_S_norm =  NaN(height(M),1);
-for I = 1:height(M)
-    idx =  G.chr_num==M.chr_num(I) ;
-    M.Muller14_exponential_norm(I) = M.Muller14_exponential(I) / G.modefit_Muller14_exponential(idx) ; 
-    M.Muller14_stationary_norm(I) = M.Muller14_stationary(I) / G.modefit_Muller14_stationary(idx) ; 
-    M.Muller14_G2_norm(I) = M.Muller14_G2(I) / G.modefit_Muller14_G2(idx) ; 
-    M.Muller14_S_norm(I) = M.Muller14_S(I) / G.modefit_Muller14_S(idx) ; 
+% G = grpstats( M ,'chr_num',{@modefit @sum @mean},'DataVars',{'Muller14_exponential' 'Muller14_stationary' 'Muller14_G2' 'Muller14_S'});
+% M.Muller14_exponential_norm = NaN(height(M),1);
+% M.Muller14_stationary_norm =  NaN(height(M),1);
+% M.Muller14_G2_norm =  NaN(height(M),1);
+% M.Muller14_S_norm =  NaN(height(M),1);
+% for I = 1:height(M)
+%     idx =  G.chr_num==M.chr_num(I) ;
+%     M.Muller14_exponential_norm(I) = M.Muller14_exponential(I) / G.modefit_Muller14_exponential(idx) ; 
+%     M.Muller14_stationary_norm(I) = M.Muller14_stationary(I) / G.modefit_Muller14_stationary(idx) ; 
+%     M.Muller14_G2_norm(I) = M.Muller14_G2(I) / G.modefit_Muller14_G2(idx) ; 
+%     M.Muller14_S_norm(I) = M.Muller14_S(I) / G.modefit_Muller14_S(idx) ; 
+% end
+M.Muller14 = NaN(height(M),1);
+for chrI = 1:16
+    idx = M.chr_num == chrI ; 
+    X = M.start_point(idx)./1000;
+    Y = M.Muller14_S(idx) ./ M.Muller14_G2(idx) ; 
+    Yn = M.Muller14_S(idx) ;
+    Yd = M.Muller14_G2(idx);
+    Y = Yn ./ Yd ; 
+    [ Ys  , P ] = csaps( X , Y  , .1 , X) ; 
+    Ys = (Ys - min(abs(Ys)));
+    Ys = ( Ys ./ max(Ys) ) * 100 ; 
+    M.Muller14(idx) = Ys ; 
 end
+
+
 %%
 
 T = outerjoin(K,R,'Key',{'chr_num' 'start_point'},'MergeKeys',true);
@@ -43,19 +58,6 @@ T = innerjoin( T , dataset2table(DS(:,{'chr_num' 'start_point' 'dist_to_the_end_
     'percent_underreplicated_cdc20' 'percent_underreplicated_dbf2' })) ...
     );
 
-%%% Question to ask: what fraction of our underrep regions are
-%%% late-replicating in various papers? 
-
-% % % %% Under-rep THRESHOLDS by % of the genome
-% % % pctile_thresholds = [80 90 95 99];
-% % % legend_text = {'<80%' '>20%' '>10%' '>5%' '>1%'} ; 
-% % % Classes = zeros(height(T),1);
-% % % for I = 1:numel(pctile_thresholds)
-% % %     THRESH = prctile(T.percent_underreplicated_cdc20 , pctile_thresholds(I)); 
-% % %     Classes(T.percent_underreplicated_cdc20 >= THRESH) = I ; 
-% % %     fprintf('%d\t%0.0f%% = %0.02f\n' , I , pctile_thresholds(I) , 100*THRESH);
-% % % end
-% % % 
 
 %% Under-rep THRESHOLDS by value
 pctile_thresholds = [20 25 30 35 40 45 ];
@@ -104,15 +106,16 @@ yval = get(bh(5,end),'YData') ;
 line( xlim , [yval(1) yval(1)] ,'LineStyle','--','Color',[.5 .5 .5])
 set(gca,'ytick',0:10:100)
 
-data =  T.Muller14_G2 ./ T.Muller14_S  ;
-data = 100 * (data ./ max(data(~isinf(data))) );
+%data =  T.Muller14_G2 ./ T.Muller14_S  ;
+%data = 100 * (data ./ max(data(~isinf(data))) );
+data =  -1*(T.Muller14-100) ; 
 subplot(2,2,4)
 bh = boxplot(data, Classes,'Symbol','') ;
 title({'Muller et. al. 2014' '(w303, sort-seq S & G2) ; 1 rep'} ) ; 
 ylabel('Replication timing (G2/S) (% of latest)')
 set(gca,'xticklabel',legend_text)
 xlabel('Under-replication (METpr-CDC20)')
-ylim([40 90])
+ylim([40 100])
 yval = get(bh(5,end),'YData') ;
 line( xlim , [yval(1) yval(1)] ,'LineStyle','--','Color',[.5 .5 .5])
 set(gca,'ytick',0:10:100)

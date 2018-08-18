@@ -140,62 +140,78 @@ set(bh(5,1),'Color',GREEN,'LineWidth',2)
 
 
 
-%% dual-y axis plot
-Y = NaN(2e3 , 2);
+%% Show that under-rep of G-quadruplexes is not dependent on some threshold
+Y = NaN(1e3 , 2);
 data = 100 * DS.percent_underreplicated_cdc20 ; 
 xl = linspace(95,100,nrows(Y));
 for I = 1:numel(xl)
     idx =  DS.G4 > prctile(DS.G4,xl(I)) ; 
     Y(I,1) = sum(idx);
-    Y(I,2) = nanmean(data(idx)) ./ nanmean(data(~idx)) ; 
- %   fprintf('%d\t%d\t%0.02f \n' , I , Y(I,1) , Y(I,2));
+    Y(I,2) = nanmean(data(idx)) - nanmean(data(~idx)) ; 
+    Y(I,3) = nanmean(DS.smooth_residual_1(idx)) - nanmean(DS.smooth_residual_1(~idx)) ; 
+    Y(I,4) = nanmean(DS.smooth_residual_2(idx)) - nanmean(DS.smooth_residual_2(~idx)) ; 
+    %   fprintf('%d\t%d\t%0.02f \n' , I , Y(I,1) , Y(I,2));
 end
+%%
+fh = figure('units','centimeters','position',[5 5 10 10 ]); hold on ;
+plot( Y(:,1) , Y(:,2) ,'-k' ,'LineWidth',2);
+plot( Y(:,1) , 10*Y(:,3) ,'-' ,'LineWidth',2);
+%plot( Y(:,1) , Y(:,4) ,'-' ,'LineWidth',2);
+set(gca,'xscale','log');
+set(gca,'xtick',[1 2 5 10 20 50 100 200 500 1e3 2e3 5e3])
+xlabel('# of G-quadruplexes (increasing threshold)');
+ylabel('Relative under-rep (G-quad - non-G-quad)');
+set(gca,'XDir','reverse')
+xlim([28 2000])
 
-fh = figure('units','centimeters','position',[5 5 15 10 ]);
-hold on; 
-[AX,H1,H2] = plotyy( xl , Y(:,1) , xl , Y(:,2));
-set(H1,'LineWidth',3)
-set(H2,'LineWidth',3)
-
-grid on ;
-set(gca,'ytick',[1 10 20 50 100 200 500 1e3 2e3 5e3])
-set(AX(1),'yscale','log')
-ylabel(AX(1)','# of G-quadruplexes');
-ylabel(AX(2)','%underrep (G-quad / non-G-quad)');
-xlabel('threshold value (% of G4-Hunter scores in the genome)')
-set(AX(2),'ytick',1:50)
 
 
 %% dual-y axis plot for SNPs shows that it's just a position thing
-Y = NaN(2e3 , 2);
+Y = NaN(1e3 , 2);
 data = 100 * DS.percent_underreplicated_cdc20 ; 
-data = DS.smooth_residual_1 ;
-xl = linspace(50,100,nrows(Y));
+xl = linspace(0,100,nrows(Y));
 for I = 1:numel(xl)
     idx =  DS.freq_SNP > prctile(DS.freq_SNP,xl(I)) ; 
     Y(I,1) = sum(idx);
-    Y(I,2) = nanmean(data(idx)) ; 
-    Y(I,3) = nanmean(data(~idx)) ; 
+    Y(I,2) = nanmean(data(idx)) - nanmean(data(~idx)) ; 
+    Y(I,3) = nanmean(DS.smooth_residual_1(idx)) - nanmean(DS.smooth_residual_1(~idx)) ; 
+    Y(I,4) = nanmean(DS.smooth_residual_2(idx)) - nanmean(DS.smooth_residual_2(~idx)) ; 
+    %   fprintf('%d\t%d\t%0.02f \n' , I , Y(I,1) , Y(I,2));
 end
+fh = figure('units','centimeters','position',[5 5 10 10 ]); hold on ;
+plot( Y(:,1) , Y(:,2) ,'-k' ,'LineWidth',2);
+plot( Y(:,1) , 10*Y(:,3) ,'-' ,'LineWidth',2);
+%plot( Y(:,1) , Y(:,4) ,'-' ,'LineWidth',2);
+set(gca,'xscale','log');
+set(gca,'xtick',[1 2 5 10 20 50 100 200 500 1e3 2e3 5e3 1e4])
+xlabel('# of high mutation rate loci (increasing threshold)');
+ylabel('Relative under-rep (high-SNP - low-SNP)');
+set(gca,'XDir','reverse')
+xlim([50 9e3])
 
-fh = figure('units','centimeters','position',[5 5 15 10 ]);
-hold on; 
-[AX,H1,H2] = plotyy( xl , Y(:,1) , xl , Y(:,2));
-set(H1,'LineWidth',3)
-set(H2,'LineWidth',3)
-grid on ;
-set(AX(1),'ytick',[1 10 20 50 100 200 500 1e3 2e3 5e3 1e4 2e4])
-set(AX(1),'yscale','log')
-ylabel(AX(1)','# of loci');
-ylabel(AX(2)','%underrep - smoothed');
-xlabel('threshold value (% high SNP loci)')
-%set(AX(2),'ytick',1:50)
-line( AX(2) , xlim , [0 0],'LineStyle','--','Color',[.7 .7 .7])
-set(AX(2),'ylim',[-0.2 2.2])
-set(AX(2),'ytick',0:5)
+%% dual-y axis plot for SNPs shows that it's just a position thing
+Y = NaN(1e3 , 2);
+data = DS.freq_SNP ; 
+xl = linspace(0,100,nrows(Y));
+for I = 1:numel(xl)
+    idx =  DS.percent_underreplicated_cdc20 > prctile(DS.percent_underreplicated_cdc20,xl(I)) ; 
+    Y(I,1) = sum(idx);
+    Y(I,2) = nanmean(data(idx)) - nanmean(data(~idx)) ; 
 
-
-% 
+    idx =  DS.smooth_residual_1 > prctile(DS.smooth_residual_1,xl(I)) ; 
+    Y(I,3) = sum(idx);
+    Y(I,4) = nanmean(data(idx)) - nanmean(data(~idx)) ; 
+end
+fh = figure('units','centimeters','position',[5 5 10 10 ]); hold on ;
+plot( Y(:,1) , Y(:,2) ,'-k' ,'LineWidth',2);
+%plot( Y(:,3) , Y(:,4) ,'-' ,'LineWidth',2);
+set(gca,'xscale','log');
+set(gca,'xtick',[1 2 5 10 20 50 100 200 500 1e3 2e3 5e3 1e4])
+xlabel('# of high under-rep loci (increasing threshold)');
+ylabel('Relative under-rep (high-SNP - low-SNP)');
+set(gca,'XDir','reverse')
+xlim([100 9e3])
+%% 
 % %% make new table w/DS & DS_FEATURES
 % DS.middle_point_kb = round(DS.middle_point_kb);
 % DS_FEATURES.middle_point_kb = round(DS_FEATURES.middle_point_kb);

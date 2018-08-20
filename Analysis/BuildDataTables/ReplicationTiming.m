@@ -15,9 +15,17 @@ for TimePoint = [25 30 35 40 45 50 90]
     R = readtable( [ DATADIR '/Muller14__GSE48212/' sprintf('t%d.bed',TimePoint) ] ,'FileType','text');
     R.chr_num = str2double(regexprep(R.Var1,'chr',''));
     R.M14tc_Ratio = R.Var5;
-    R.start_point = R.Var2+100 ;  % move from 500 to 600
+    R.start_point = R.Var2-500 ;  % move from 500 to 000
     R.TimePoint = repmat( TimePoint ,  height(R) , 1);
     R = sortrows(R,{'chr_num' 'start_point'},'ascend');
+    M14tc = vertcat( M14tc , R( : , { 'TimePoint' 'chr_num' 'start_point' 'M14tc_Ratio'}));
+    R.start_point = R.start_point + 200 ; % copy from 500 to 200
+    M14tc = vertcat( M14tc , R( : , { 'TimePoint' 'chr_num' 'start_point' 'M14tc_Ratio'}));
+    R.start_point = R.start_point + 200 ; % copy from 500 to 400
+    M14tc = vertcat( M14tc , R( : , { 'TimePoint' 'chr_num' 'start_point' 'M14tc_Ratio'}));
+    R.start_point = R.start_point + 200 ; % copy from 500 to 600
+    M14tc = vertcat( M14tc , R( : , { 'TimePoint' 'chr_num' 'start_point' 'M14tc_Ratio'}));
+    R.start_point = R.start_point + 200 ; % copy from 500 to 800
     M14tc = vertcat( M14tc , R( : , { 'TimePoint' 'chr_num' 'start_point' 'M14tc_Ratio'}));
 end
 M14tc = M14tc( ~isnan(M14tc.chr_num) ,:); %remove mito
@@ -136,6 +144,7 @@ line( xlim , [yval(1) yval(1)] ,'LineStyle','--','Color',[.5 .5 .5])
 set(gca,'ytick',0:10:100)
 
 %%  Mulller14 timecourse
+figure;
 data = 100*(2+(-1*T.M14tc_Ratio));
 bh = boxplot(data, Classes,'Symbol','') ;
 title({'Muller et. al. 2014' '(w303, 50'') ; 1 rep'} ) ; 

@@ -484,6 +484,10 @@ ylim([-20 70]);
 set(gca , 'Xtick' , [1:3] , 'XtickLabel' , legend_names)
 %print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/20170531/repTime__underrep__violin_Opt3' , '-r300');
 
+%% S6A - alternative: violin plot for RT for different people, binning based on under-rep
+
+
+
 
 %% S7 : like 2D, but for dbf2 (whole genome, transposons, fragile sites, G4)
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_stat__200bp_new.mat');

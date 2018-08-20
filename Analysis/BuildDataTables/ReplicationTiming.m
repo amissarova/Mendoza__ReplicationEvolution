@@ -1,12 +1,26 @@
 %% builds a single dataset w/rep timing from everyone's data
 DATADIR = '~/Develop/Mendoza__ReplicationEvolution/Data/ExternalData/RepTiming/' ;
 
+
 %% load our data
 load( [DATADIR '../../DS_stat__200bp_new.mat']);
 
 %% chr lengths
 ChrLengths = readtable( [DATADIR 'genome.chrlengths'],'Delimiter','\t','FileType','text');
 ChrLengths.Properties.VariableNames = {'chr_num' 'len'};
+
+%% Muller14 .wig files
+M14tc = table();
+for TimePoint = [25 30 35 40 45 50 90]
+    R = readtable( [ DATADIR '/Muller14__GSE48212/' sprintf('t%d.bed',TimePoint) ] ,'FileType','text');
+    R.chr_num = str2double(regexprep(R.Var1,'chr',''));
+    R.M14tc_Ratio = R.Var5;
+    R.start_point = R.Var2+100 ;  % move from 500 to 600
+    R.TimePoint = repmat( TimePoint ,  height(R) , 1);
+    R = sortrows(R,{'chr_num' 'start_point'},'ascend');
+    M14tc = vertcat( M14tc , R( : , { 'TimePoint' 'chr_num' 'start_point' 'M14tc_Ratio'}));
+end
+M14tc = M14tc( ~isnan(M14tc.chr_num) ,:); %remove mito
 
 %% load .bed files made w/bedools map mean
 K = readtable([ DATADIR 'Koren10_WT_200.txt'] );
@@ -53,6 +67,7 @@ end
 T = outerjoin(K,R,'Key',{'chr_num' 'start_point'},'MergeKeys',true);
 T = outerjoin(T,A,'Key',{'chr_num' 'start_point'},'MergeKeys',true);
 T = outerjoin(T,M,'Key',{'chr_num' 'start_point'},'MergeKeys',true);
+T = outerjoin(T,M14tc(M14tc.TimePoint==50,:),'Key',{'chr_num' 'start_point'},'MergeKeys',true);
 
 T = innerjoin( T , dataset2table(DS(:,{'chr_num' 'start_point' 'dist_to_the_end_kb' 'Trep_spline' 'G4' 'GC'...
     'percent_underreplicated_cdc20' 'percent_underreplicated_dbf2' })) ...
@@ -116,6 +131,18 @@ ylabel('Replication timing (G2/S) (% of latest)')
 set(gca,'xticklabel',legend_text)
 xlabel('Under-replication (METpr-CDC20)')
 ylim([40 100])
+yval = get(bh(5,end),'YData') ;
+line( xlim , [yval(1) yval(1)] ,'LineStyle','--','Color',[.5 .5 .5])
+set(gca,'ytick',0:10:100)
+
+%%  Mulller14 timecourse
+data = 100*(2+(-1*T.M14tc_Ratio));
+bh = boxplot(data, Classes,'Symbol','') ;
+title({'Muller et. al. 2014' '(w303, 50'') ; 1 rep'} ) ; 
+ylabel('%Under-replication (G1/50'')')
+set(gca,'xticklabel',legend_text)
+xlabel('Under-replication (METpr-CDC20)')
+ylim([0 100])
 yval = get(bh(5,end),'YData') ;
 line( xlim , [yval(1) yval(1)] ,'LineStyle','--','Color',[.5 .5 .5])
 set(gca,'ytick',0:10:100)

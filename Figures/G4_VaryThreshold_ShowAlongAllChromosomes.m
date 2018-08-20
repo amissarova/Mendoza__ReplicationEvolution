@@ -37,7 +37,7 @@ Ys = DS.smooth_residual_1 ;
 
 
 %% plot an example of the smoothed data
-chrI=10 ; 
+for chrI = 1:16
 THRESH = [99.5];
 GREEN = [0.1818    0.5909    0.4000] ; 
 idx = DS.chr_num == chrI ; 
@@ -62,13 +62,14 @@ idx = regexpcmp(G2.TYPE,'transposable_element_gene') & G2.chr_num == chrI ;
 if sum(idx)>0 , plot(G2.roundpos(idx) , Y2(idx) , 'sm') , end
 
 % fragile sites
-idx = regexpcmp(G2.TYPE,'terminal_del_dup') & G2.chr_num == chrI ;
+idx = regexpcmp(G2.TYPE,'_del_dup') & G2.chr_num == chrI ;
 if sum(idx)>0 , plot(G2.roundpos(idx) , Y2(idx)  , 'sc','MarkerFaceColor','c') , end
 
 title(['chr ' num2roman(chrI)]);
 
 ylim([-9 40])
 
+end
 %% boxplots showing G-quads & transposon higher %underrep even after smoothing
 %% G4 enrichment by random sampling
 

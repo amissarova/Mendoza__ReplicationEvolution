@@ -1,7 +1,7 @@
 
 %% get RPA data
 addpath(genpath('~/Develop/matlab'));
-cd ~/Develop/Mendoza__ReplicationEvolution/RPA
+cd ~/Develop/Mendoza__ReplicationEvolution/Data/RPA
 
 %%
 D = dataset('file' , 'RPA.tab');

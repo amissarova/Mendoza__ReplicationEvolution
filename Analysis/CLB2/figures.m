@@ -1,6 +1,6 @@
 
 %%
-cd ~/Develop/Mendoza__ReplicationEvolution/CLB2
+cd ~/Develop/Mendoza__ReplicationEvolution/
 addpath(genpath('~/Develop/matlab'));
 load('~/Develop/Mendoza__ReplicationEvolution/Data/DS_CLB2.mat');
 DS = sortrows(DS , {'ReplicateNum' , 'Strain' , 'Condition' , 'TimePoint'});

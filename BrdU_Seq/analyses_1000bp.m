@@ -71,7 +71,7 @@ DS.rDNA_bool = zeros(length(DS),1);
 N1 = 459797; N2 = 468931;
 idx = find(strcmp(DS.chr , 'chrXII'));
 for J = 1:length(idx)
-    if DS.start_point(idx(J)) >= N1 | DS.start_point(idx(J)) < N2
+    if DS.start_point(idx(J)) >= N1 & DS.start_point(idx(J)) < N2
         DS.rDNA_bool(idx(J)) = 1;
     end
 end

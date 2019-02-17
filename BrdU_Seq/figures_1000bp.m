@@ -234,7 +234,7 @@ for I = 1:length(DS)
 end
 figure; hold on; grid on; set(gca , 'FontSize' , 12);
 idx = find(~strcmp(DS.chr , 'chrMito'));
-boxplot(DS.median_CNR_MG1_MM , DS.rDNA_bool , 'color' , [.2 .2 .2] , 'symbol' , '');
+boxplot(DS.median_CNR_MG1_MM(idx) , DS.rDNA_bool(idx) , 'color' , [.2 .2 .2] , 'symbol' , '');
 xlabel('rDNA');
 ylabel('CN-ratio (G1/M)');
 ylim([.5 2]);

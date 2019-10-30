@@ -1,5 +1,3 @@
-clrs = cbrewer('qual','Dark2',8) ; 
-FA = 0.75 ; 
 %% cdc15-as vs top2-ts cdc15-as
 %  the top2 plots differ from the DNA polymerase/BIR plots.
 %    Because of the inefficient cytokinesis in the top2 double mutant, this 
@@ -13,7 +11,20 @@ FA = 0.75 ;
 % The top2 cdc15 strain specifically is particularly bad at doing cytokinesis after inhibitor washout (~20%) compared to the other strains (60-80%). 
 %        I speculate this could be due to background difference in inhibitor sensitivity, 
 %       the top2 allele was crossed in. 
+%
 
+%% set constans for making the figures 
+clrs = cbrewer('qual','Dark2',8) ; 
+FA = 0.75 ; 
+
+%% B cdc15-as1 vs cdc15-as1 + top2-ts
+% Cells quantified here are only those that loose the bridge during the movie. Those cells are categorized as cut,
+%    loose the bridge when the ring has contracted, or as not cut, loose the bridge before the ring has contracted,
+%    regardless of whether or not it contracts at all during the movie.
+%
+% A suggestion would be to label the y-axis with something that describes a loss of the bridge due 
+%    to any reason. I would label the bars as "cut" and/or "not cut" but you could of course replace 
+%     "not cut" with "resolved".
 
 B_resolve = [ 82.0779220779221 91.42857142857144 ] ; 
 
@@ -32,21 +43,9 @@ bar(1 , B_resolve(1) , 'FaceColor' ,clrs(1,:) ,'FaceAlpha',FA);
 bar(2 , B_resolve(2) , 'FaceColor' ,clrs(7,:) ,'FaceAlpha',FA);
 errorbar( 1 , mean(m1) , std(m1) , '.' ,'LineWidth',2 ,'Color',clrs(1,:)); 
 errorbar( 2 , mean(m2) , std(m2) , '.' ,'LineWidth',2 ,'Color',clrs(6,:)); 
-
-
-%% test
-clrs = cbrewer('qual','Dark2',8) ; 
-
-B_resolve = [ 82.0779220779221 91.42857142857144 ] ; 
-
-fh = figure('units','centimeters','position',[5 5 4 7]);
-hold on ;
-bar( [ 100 100] , 'FaceColor' , [.99 .99 .99]);
-bar(1 , B_resolve(1) , 'FaceColor' ,clrs(1,:) ,'FaceAlpha',0.5);
-bar(2 , B_resolve(2) , 'FaceColor' ,clrs(2,:) ,'FaceAlpha',0.5);
 set(gca,'xtick',[])
 xlim([0.5 2.5])
-ylabel('% of cells with a visible bridge')
+ylabel('% of cells with a bridge that goes away')
 
 %%
 A_resolve = [12.468 9.351 ] 

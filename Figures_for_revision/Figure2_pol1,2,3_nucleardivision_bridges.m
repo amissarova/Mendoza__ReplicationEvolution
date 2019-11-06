@@ -3,12 +3,12 @@
 
 
 %% load data
-PROJECTDIR = '~/CareyLab/Projects/2017__MendozaReplication/' ;
+PROJECTDIR = '~/Develop/Mendoza__ReplicationEvolution/' ;
 DATADIR = '~/Develop/Mendoza__ReplicationEvolution/figure1_data_analysis/2019.10.17 -- new data on nuclear segregation and chr bridges/' ; 
-DATA_FILE_1 = [ '/Users/lcarey/CareyLab/Projects/2017__MendozaReplication/Figures_for_revision/Fig2 old data/division pols123.txt' ] ;
-DATA_FILE_2 = [ '/Users/lcarey/CareyLab/Projects/2017__MendozaReplication/Figures_for_revision/Fig2 old data/division pol2 noco.txt' ] ;
-DATA_FILE_3 = [ '/Users/lcarey/CareyLab/Projects/2017__MendozaReplication/Figures_for_revision/Fig2 old data/bridges pols123.txt' ] ;
-DATA_FILE_4 = [ '/Users/lcarey/CareyLab/Projects/2017__MendozaReplication/Figures_for_revision/Fig2 old data/bridges pol2 noco.txt' ] ;
+DATA_FILE_1 = [ PROJECTDIR 'Figures_for_revision/Fig2 old data/division pols123.txt' ] ;
+DATA_FILE_2 = [ PROJECTDIR 'Figures_for_revision/Fig2 old data/division pol2 noco.txt' ] ;
+DATA_FILE_3 = [ PROJECTDIR 'Figures_for_revision/Fig2 old data/bridges pols123.txt' ] ;
+DATA_FILE_4 = [ PROJECTDIR 'Figures_for_revision/Fig2 old data/bridges pol2 noco.txt' ] ;
 
 FIGUREOUTDIR = [ PROJECTDIR '/Figures_for_revision/' ] ;  system(['mkdir -p ' FIGUREOUTDIR]);
 
@@ -63,6 +63,10 @@ x3 = [sum(T1.WT<300) sum(T1.WT>=300) ; sum(T1.pol3<300) sum(T1.pol3>=300)  ] ;
 [~,p2,~] = fishertest(x2)
 [~,p3,~] = fishertest(x3)
 
+[mwu_p1,~,~] = ranksum(T1.WT , T1.pol1 )
+[mwu_p2,~,~] = ranksum(T1.WT , T1.pol2 )
+[mwu_p3,~,~] = ranksum(T1.WT , T1.pol3 )
+
 fprintf('pol1 %0.09f\n' , p1);
 fprintf('pol2 %0.09f\n' , p2);
 fprintf('pol3 %0.09f\n' , p3);
@@ -84,6 +88,7 @@ T2.pol2(T2.pol2>=200)=1e9 ;  T2.WT(T2.WT>=200)=1e9 ;
 x2 = [sum(T2.WT<200) sum(T2.WT>=200) ; sum(T2.pol2<200) sum(T2.pol2>=200)  ] ; 
 
 [~,p2,~] = fishertest(x2)
+[mwu_p2,~,~] = ranksum(T2.WT , T2.pol2 )
 
 fprintf('pol2 + nocodazole %0.09f\n' , p2);
 

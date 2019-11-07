@@ -36,6 +36,11 @@ ylabel('# of cells')
 xlabel('Time to segregation from anaphase onset')
 [~,p]=ttest2(rDNA.HU,rDNA.untreated)
 
+sum(~isnan(rDNA.HU))
+sum(~isnan(rDNA.untreated))
+
+
+
 %% tel
 fh = figure('units','centimeters','position',[5 5 8 8]);
 hold on ;
@@ -62,6 +67,9 @@ ylim([0 94])
 ylabel('# of cells')
 xlabel('Time to segregation from anaphase onset')
 [~,p]=ttest2(tel12.HU,tel12.untreated)
+
+sum(~isnan(tel12.HU))
+sum(~isnan(tel12.untreated))
 
 
 %% boxplots show no difference in the distribution

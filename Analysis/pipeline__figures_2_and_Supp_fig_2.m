@@ -761,10 +761,10 @@ N = length(h);
 for j=1:N
     patch(get(h(N-j+1),'XData'),get(h(N-j+1),'YData'), clrs_set(j,:) ,'FaceAlpha',.5 , 'Display' , legend_titles{j});
 end
-legend('location' , 'SouthOutside');
-ylim([-25 70]);
+legend('location' , 'ne');
+ylim([-11 65]);
 set(gca , 'Xtick' , '');
-%ylabel('Under-replication, %');
+ylabel('Under-replication, %');
 %print('-dpng' , '~/Develop/Mendoza__ReplicationEvolution/Figures/Fig2/20170531/2C' , '-r300');
 
 

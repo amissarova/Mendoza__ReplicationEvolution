@@ -1,13 +1,39 @@
 %% builds a single dataset w/rep timing from everyone's data
 DATADIR = '~/Develop/Mendoza__ReplicationEvolution/Data/ExternalData/RepTiming/' ;
 
-
 %% load our data
 load( [DATADIR '../../DS_stat__200bp_new.mat']);
 
 %% chr lengths
 ChrLengths = readtable( [DATADIR 'genome.chrlengths'],'Delimiter','\t','FileType','text');
 ChrLengths.Properties.VariableNames = {'chr_num' 'len'};
+
+
+%% regions to delete
+%rDNA:
+%chrXII, 450.6 - 491 kb
+
+%deletion:
+%chrII, 258.8 - 259.4 kb
+%chrII, 265.6 - 266 kb
+%chrIII, 148.8 - 151.2 kb
+%chrIII, 316.6 kb
+%chrIV, 2.2 kb
+%chrIV, 461.8 kb
+%chrVII, 289.6 kb
+%chrXV, 721.8 - 722.4 kb
+c = {'chrXII' 'chrII' 'chrII' 'chrIII' 'chrIII' 'chrIV' 'chrIV' 'chrVII' 'chrXV'};
+s = [450.6 258.8  265.6 148.8  316.6  2.2 461.8  289.6 721.8  ] ; 
+e = [ 491  259.4  266   151.2  316.6  2.2 461.8  289.6 722.4 ];
+R = table(c',s',e');
+
+for I = 1:height(R)
+    to_delete = ( strcmp(DS.chr,R.Var1{I}) & ( DS.start_point>=R.Var2(I)*1000 &  DS.end_point<=R.Var3(I)*1000 ));
+    DS = DS( ~to_delete ,:);
+    R.RemovedN(I) = sum(to_delete);
+end
+
+
 
 %% Muller14 .wig files
 M14tc = table();
@@ -100,7 +126,7 @@ ylabel('Replication timing (min after G1)')
 set(gca,'xticklabel',legend_text)
 xlabel('Under-replication (METpr-CDC20)')
 yval = get(bh(5,end),'YData') ;
-line( xlim , [yval(1) yval(1)] ,'LineStyle','--','Color',[.5 .5 .5])
+%line( xlim , [yval(1) yval(1)] ,'LineStyle','--','Color',[.5 .5 .5])
 
 
 data =  T.Raghuraman01 - abs(min(T.Raghuraman01))   ;
@@ -112,7 +138,7 @@ ylabel('Replication timing (% of latest)')
 set(gca,'xticklabel',legend_text)
 xlabel('Under-replication (METpr-CDC20)')
 yval = get(bh(5,end),'YData') ;
-line( xlim , [yval(1) yval(1)] ,'LineStyle','--','Color',[.5 .5 .5])
+%line( xlim , [yval(1) yval(1)] ,'LineStyle','--','Color',[.5 .5 .5])
 set(gca,'ytick',0:10:100)
 
 

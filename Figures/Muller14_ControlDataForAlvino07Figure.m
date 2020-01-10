@@ -8,6 +8,13 @@ ORI.Tp17_5_ = strcmp(ORI.Tp17_5_,'Y');
 ORI.Tp25_ = strcmp(ORI.Tp25_,'Y');
 ORI.Tp15_ = strcmp(ORI.Tp15_,'Y');
 
+% remove rDNA and regions deleted in our yeast strain
+% N_begin = 450.663;
+% N_end = 491;
+% chr XII 
+%  deleted region: chr III, 148-152kb
+
+
 
 %% load data from Muller14
 T = readtable('~/Google Drive File Stream/My Drive/CareyLab/ExternalData/Muller14/coverage.tab','FileType','text','Delimiter','\t');

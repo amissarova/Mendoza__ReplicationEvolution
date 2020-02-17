@@ -1,8 +1,15 @@
 %% Correlation of chromosome arm length vs lenghth-of-underrep
-% Lucas Febuary 2020
+%
+% REVIEWER:
+% 15. Page 13, ?replication and chromosome arm length are negatively correlated (r=-0.65) (Figure S16a).? When you check carefully the Fig. S 16a, 
+% this correlation is obviously overestimated. On the Fig. S16a, it clearly shows that the chromosome arms with extremely short length (i.e. < 100 kb)
+% present the largest length of under replication. If you remove these points, the reported negative correlation is almost gone.
+%
 %  replicating : Supplementary Figure 16. Chromosome arms with longer under-replicated
 % 
 % use bootstrapping to calculate robustness of correlation
+%
+% LBC Febuary 2020
 
 
 %% load data

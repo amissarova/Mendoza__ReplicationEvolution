@@ -69,7 +69,7 @@ for I = 1:height(R)
         xlabel('position along chr XII')
         
         cond2 = ANNO.cond2{ strcmp(ANNO.file_ID,R.file_ID{I})};
-        txt = sprintf('I=%d , %s,%s g=%0.01f rDNA=%0.01f CN_{rDNA}=%0.01f' , I , R.exp_date{I} , cond2  , R.cov(I) , R.cov_rDNA(I)  , 2*R.cov_rDNA(I)/R.cov(I) ); 
+        txt = sprintf('I=%d , %s,%s g=%0.01f rDNA=%0.01f CN_{rDNA}=%0.01f' , I , R.exp_date{I} , cond2  , R.cov(I) , R.cov_rDNA(I)  , 0.5*R.cov_rDNA(I)/R.cov(I) ); 
         title( txt ) ;
         
         print('-dpsc2' , figname , '-append');
@@ -84,12 +84,12 @@ end
 R = innerjoin(R,ANNO,'Key','file_ID');
 R.exp_date = categorical(R.exp_date);
 
-R.rDNA_CN = 2*R.cov_rDNA ./ R.cov ; 
+R.rDNA_CN = 0.5 .* R.cov_rDNA ./ R.cov ; 
 
 
 
-%% summary plot of all three experiments
-fh = figure('units','centimeters','position',[5 5  35 8]) ;
+% summary plot of all three experiments
+fh = figure('units','centimeters','position',[5 5  30 8]) ;
 
 subplot(1,3,1)
 idx = R.exp_date == '2017-09-15' ; 
@@ -112,6 +112,9 @@ ylabel('rDNA coverage (norm)')
 xlabel('chrXII (excluding rDNA) mode-fit coverage')
 title('2017-10-06' )
 
+orient(fh,'landscape');
+ print('-dpsc2' , figname , '-append');
+  close ; 
 
 %% %% %% %% OLD %% %% 
 %%

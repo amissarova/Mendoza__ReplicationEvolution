@@ -33,7 +33,7 @@ T.exp_date = regexprep( T.exp_date , 'Data_' ,'');
 %%
 
 %% calculate coverage and make a scatterplot for each experiment
-figname = '~/Downloads/coverage_plot.eps' ; delete(figname);
+figname = '~/Downloads/MendozaMissarova__rDNA_CopyNumber_revisions_March2020' ; delete(figname);
 R = table();
 file_ID = unique(T.file_ID);
 R.file_ID = file_ID( ismember( file_ID , ANNO.file_ID(~regexpcmp(ANNO.condition_cat,'dbf2')))) ; % remove dbf2
@@ -55,7 +55,7 @@ for I = 1:height(R)
 
     R.exp_date{I} = T.exp_date{ find( strcmp(T.file_ID,R.file_ID{I}),1) } ; 
 
-   % if (false)
+    if (false)
         fh = figure('units','centimeters','position',[5 5  15 8]) ;
         hold on ;
         plot( T.start(idx)./1000 , T.mean_coverage(idx) ,'.k');
@@ -69,7 +69,7 @@ for I = 1:height(R)
         xlabel('position along chr XII')
         
         cond2 = ANNO.cond2{ strcmp(ANNO.file_ID,R.file_ID{I})};
-        txt = sprintf('I=%d , %s,%s g=%0.01f rDNA=%0.01f CN_{rDNA}=%0.01f' , I , R.exp_date{I} , cond2  , R.cov(I) , R.cov_rDNA(I)  , 0.5*R.cov_rDNA(I)/R.cov(I) ); 
+        txt = sprintf('I=%d , %s,%s g=%0.01f rDNA=%0.01f CN_{rDNA}=%0.01f' , I , R.exp_date{I} , cond2  , R.cov(I) , R.cov_rDNA(I)  , 2*R.cov_rDNA(I)/R.cov(I) ); 
         title( txt ) ;
         
         print('-dpsc2' , figname , '-append');
@@ -77,64 +77,97 @@ for I = 1:height(R)
 
                 
         
-  % end
+   end
 end
 
 
 R = innerjoin(R,ANNO,'Key','file_ID');
 R.exp_date = categorical(R.exp_date);
 
-R.rDNA_CN = 0.5 .* R.cov_rDNA ./ R.cov ; 
+R.rDNA_CN = 2 .* R.cov_rDNA ./ R.cov ; 
 
+R.cond2 = regexprep( R.cond2 , ' of cdc20' , '');
+%%
+yl = [75 135] ; 
+fh = figure('units','centimeters','position',[5 5  18 6]) ;
+t=tiledlayout(1,3,'TileSpacing','Compact','Padding','Compact') ; 
 
+nexttile; 
+idx = R.exp_date == '2017-09-15' & ~strcmp(R.cond2,'G1') ; 
+boxplot(R.rDNA_CN(idx) , R.cond2(idx)  ,'Widths', 0.75 )
+[~,p] = ttest2( R.rDNA_CN(idx & strcmp(R.cond2,'M')) , R.rDNA_CN(idx & ~strcmp(R.cond2,'M')) ); 
+title('2017-09-15' ); title('\it{cdc28-as1}')
+ylim( yl ) ; 
+xlim([0.5 2.5])
 
-% summary plot of all three experiments
-fh = figure('units','centimeters','position',[5 5  30 8]) ;
-
-subplot(1,3,1)
-idx = R.exp_date == '2017-09-15' ; 
-gscatter(R.cov(idx) , R.rDNA_CN(idx) , { R.cond2(idx) T.cond2(idx)}  )
-ylabel('rDNA coverage (norm)')
-xlabel('chrXII (excluding rDNA) mode-fit coverage')
-title('2017-09-15' )
-
-subplot(1,3,2)
+nexttile;
 idx = R.exp_date == '2017-03-23' ; 
-gscatter(R.cov(idx)  , R.rDNA_CN(idx) , { R.cond2(idx) T.cond2(idx)}  )
-ylabel('rDNA coverage (norm)')
-xlabel('chrXII (excluding rDNA) mode-fit coverage')
-title('2017-03-23')
+boxplot(R.rDNA_CN(idx) , R.cond2(idx)  ,'Widths', 0.75 )
+title('2017-03-23'); title('METpr-CDC20')
+ylim( yl ) ; 
+xlim([0.5 2.5])
 
-subplot(1,3,3)
+nexttile;
 idx = R.exp_date == '2017-10-06' ; 
-gscatter(R.cov(idx) , R.rDNA_CN(idx) , { R.cond2(idx) T.cond2(idx)}  )
-ylabel('rDNA coverage (norm)')
-xlabel('chrXII (excluding rDNA) mode-fit coverage')
-title('2017-10-06' )
+boxplot(R.rDNA_CN(idx) , R.cond2(idx) ,'Widths', 0.75 )
+title('2017-10-06' ); title('METpr-CDC20')
+ylim( yl ) ; 
+xlim([0.5 2.5])
 
 orient(fh,'landscape');
- print('-dpsc2' , figname , '-append');
-  close ; 
+ylabel( t , 'rDNA copy number')
 
-%% %% %% %% OLD %% %% 
-%%
+print('-dpng' , figname , '-r600');
+close ; 
 
-
-%
-% %% old version with mean across the chromosome
-% %T = readtable( [DATADIR 'chrXII_rDNA_coverage.txt']  , 'FileType','text' , 'ReadVariableNames',false , 'Delimiter','\t');
-% %T.Properties.VariableNames = {'chr' 'start' 'stop'  'mean_coverage' 'bamfile'} ;
-%
-%
-% T.file_ID = regexprep( regexprep( T.bamfile , '.*BAM/' , '')  , '.bam' ,'');
-% T.exp_date = regexprep( regexprep( T.bamfile , '^../' , '')  , '/BAM.*' ,'');
-%
-% T.NormalizedCoverage  = NaN(height(T),1);
-% for I = 2:3:height(T)
-%     T.NormalizedCoverage(I) = T.mean_coverage(I) / mean( [ T.mean_coverage(I-1) T.mean_coverage(I+1)] ) ;
-% end
-% T.NormalizedCoverage = 2*T.NormalizedCoverage ;
-
-%figure;
-%boxplot( T.NormalizedCoverage , {T.exp_date  T.condition_cat }  )
-%ylabel('rDNA copy number')
+% 
+% %% summary plot of all three experiments
+% fh = figure('units','centimeters','position',[5 5  30 8]) ;
+% 
+% subplot(1,3,1)
+% idx = R.exp_date == '2017-09-15' ; 
+% gscatter(R.cov(idx) , R.rDNA_CN(idx) , { R.cond2(idx) T.cond2(idx)}  )
+% ylabel('rDNA coverage (norm)')
+% xlabel('chrXII (excluding rDNA) mode-fit coverage')
+% title('2017-09-15' )
+% 
+% subplot(1,3,2)
+% idx = R.exp_date == '2017-03-23' ; 
+% gscatter(R.cov(idx)  , R.rDNA_CN(idx) , { R.cond2(idx) T.cond2(idx)}  )
+% ylabel('rDNA coverage (norm)')
+% xlabel('chrXII (excluding rDNA) mode-fit coverage')
+% title('2017-03-23')
+% 
+% subplot(1,3,3)
+% idx = R.exp_date == '2017-10-06' ; 
+% gscatter(R.cov(idx) , R.rDNA_CN(idx) , { R.cond2(idx) T.cond2(idx)}  )
+% ylabel('rDNA coverage (norm)')
+% xlabel('chrXII (excluding rDNA) mode-fit coverage')
+% title('2017-10-06' )
+% 
+% orient(fh,'landscape');
+%  print('-dpsc2' , figname , '-append');
+%   close ; 
+% 
+% %% %% %% %% OLD %% %% 
+% %%
+% 
+% 
+% %
+% % %% old version with mean across the chromosome
+% % %T = readtable( [DATADIR 'chrXII_rDNA_coverage.txt']  , 'FileType','text' , 'ReadVariableNames',false , 'Delimiter','\t');
+% % %T.Properties.VariableNames = {'chr' 'start' 'stop'  'mean_coverage' 'bamfile'} ;
+% %
+% %
+% % T.file_ID = regexprep( regexprep( T.bamfile , '.*BAM/' , '')  , '.bam' ,'');
+% % T.exp_date = regexprep( regexprep( T.bamfile , '^../' , '')  , '/BAM.*' ,'');
+% %
+% % T.NormalizedCoverage  = NaN(height(T),1);
+% % for I = 2:3:height(T)
+% %     T.NormalizedCoverage(I) = T.mean_coverage(I) / mean( [ T.mean_coverage(I-1) T.mean_coverage(I+1)] ) ;
+% % end
+% % T.NormalizedCoverage = 2*T.NormalizedCoverage ;
+% 
+% %figure;
+% %boxplot( T.NormalizedCoverage , {T.exp_date  T.condition_cat }  )
+% %ylabel('rDNA copy number')

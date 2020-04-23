@@ -1,5 +1,6 @@
 # Mendoza__ReplicationEvolution
-https://doi.org/10.1038/s41467-020-16100-3 OPEN
+https://doi.org/10.1038/s41467-020-16100-3 
+
 Budding yeast complete DNA synthesis after chromosome segregation begins
 Tsvetomira Ivanova, Michael Maier, Alsu Missarova, Céline Ziegler-Birling, Monica Dam, Mercè Gomar-Alba, Lucas B. Carey & Manuel Mendoza
 

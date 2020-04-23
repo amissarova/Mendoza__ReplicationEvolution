@@ -1,4 +1,4 @@
-# Mendoza__ReplicationEvolution
+# Budding yeast complete DNA synthesis after chromosome segregation begins
 https://doi.org/10.1038/s41467-020-16100-3 
 
 Budding yeast complete DNA synthesis after chromosome segregation begins
